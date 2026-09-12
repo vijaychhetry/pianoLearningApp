@@ -1,14 +1,22 @@
 import { LevelMeter } from "./LevelMeter";
 import { TunerGauge } from "./TunerGauge";
 import type { PitchSession } from "../audio/usePitchSession";
-import { midiToNoteName } from "../audio/note";
 
 interface ListenPanelProps {
   session: PitchSession;
   displayMidi: number | null;
+  displayFrequency: number | null;
+  displayCents: number | null;
+  displayNote: string | null;
 }
 
-export function ListenPanel({ session, displayMidi }: ListenPanelProps) {
+export function ListenPanel({
+  session,
+  displayMidi,
+  displayFrequency,
+  displayCents,
+  displayNote,
+}: ListenPanelProps) {
   const debug = session.state?.debug;
   return (
     <div className="panel">
@@ -18,9 +26,9 @@ export function ListenPanel({ session, displayMidi }: ListenPanelProps) {
         to catch piano octave errors. A note only locks after three stable frames.
       </p>
       <TunerGauge
-        cents={session.state?.cents ?? null}
-        note={session.state?.note ?? (displayMidi !== null ? midiToNoteName(displayMidi) : null)}
-        frequency={session.state?.frequency ?? null}
+        cents={displayCents}
+        note={displayNote}
+        frequency={displayFrequency}
         locked={displayMidi !== null}
       />
       <LevelMeter rms={session.liveRms} gate={session.calibration?.gateRms ?? 0.008} />

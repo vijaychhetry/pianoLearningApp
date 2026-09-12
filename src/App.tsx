@@ -12,18 +12,28 @@ export function App() {
   const session = usePitchSession();
   const [tab, setTab] = useState<Tab>("listen");
   const [practiceTarget, setPracticeTarget] = useState(60);
-  const [heldMidi, setHeldMidi] = useState<number | null>(null);
+  const [held, setHeld] = useState<{
+    midi: number;
+    note: string;
+    frequency: number | null;
+    cents: number | null;
+  } | null>(null);
   const onTargetChange = useCallback((midi: number) => setPracticeTarget(midi), []);
   const liveMidi = session.state?.midi ?? null;
 
   useEffect(() => {
-    if (liveMidi !== null) {
-      setHeldMidi(liveMidi);
+    if (session.state?.midi != null && session.state.note) {
+      setHeld({
+        midi: session.state.midi,
+        note: session.state.note,
+        frequency: session.state.frequency,
+        cents: session.state.cents,
+      });
       return;
     }
-    const timer = window.setTimeout(() => setHeldMidi(null), 1400);
+    const timer = window.setTimeout(() => setHeld(null), 1400);
     return () => window.clearTimeout(timer);
-  }, [liveMidi]);
+  }, [session.state?.midi, session.state?.note, session.state?.frequency, session.state?.cents]);
 
   const onKey = (midi: number) => {
     if (!session.running || session.inputMode !== "simulator") {
@@ -32,7 +42,7 @@ export function App() {
     session.playSimulatedNote(midi);
   };
 
-  const displayMidi = liveMidi ?? heldMidi;
+  const displayMidi = liveMidi ?? held?.midi ?? null;
 
   return (
     <div className="app">
@@ -55,7 +65,15 @@ export function App() {
       </header>
 
       <main>
-        {tab === "listen" && <ListenPanel session={session} displayMidi={displayMidi} />}
+        {tab === "listen" && (
+          <ListenPanel
+            session={session}
+            displayMidi={displayMidi}
+            displayFrequency={session.state?.frequency ?? held?.frequency ?? null}
+            displayCents={session.state?.cents ?? held?.cents ?? null}
+            displayNote={session.state?.note ?? held?.note ?? null}
+          />
+        )}
         {tab === "calibrate" && <CalibrationWizard session={session} />}
         {tab === "practice" && (
           <PracticePanel session={session} target={practiceTarget} onTargetChange={onTargetChange} />
