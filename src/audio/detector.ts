@@ -31,7 +31,7 @@ export const DEFAULT_DETECTOR_SETTINGS: DetectorSettings = {
   yinThreshold: 0.12,
   probabilityThreshold: 0.55,
   stableFrames: 3,
-  releaseAfterMs: 220,
+  releaseAfterMs: 450,
   minFreq: 55,
   maxFreq: 2093,
   centsTolerance: 45,

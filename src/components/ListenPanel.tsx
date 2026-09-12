@@ -1,12 +1,14 @@
 import { LevelMeter } from "./LevelMeter";
 import { TunerGauge } from "./TunerGauge";
 import type { PitchSession } from "../audio/usePitchSession";
+import { midiToNoteName } from "../audio/note";
 
 interface ListenPanelProps {
   session: PitchSession;
+  displayMidi: number | null;
 }
 
-export function ListenPanel({ session }: ListenPanelProps) {
+export function ListenPanel({ session, displayMidi }: ListenPanelProps) {
   const debug = session.state?.debug;
   return (
     <div className="panel">
@@ -17,9 +19,9 @@ export function ListenPanel({ session }: ListenPanelProps) {
       </p>
       <TunerGauge
         cents={session.state?.cents ?? null}
-        note={session.state?.note ?? null}
+        note={session.state?.note ?? (displayMidi !== null ? midiToNoteName(displayMidi) : null)}
         frequency={session.state?.frequency ?? null}
-        locked={Boolean(session.state?.midi)}
+        locked={displayMidi !== null}
       />
       <LevelMeter rms={session.liveRms} gate={session.calibration?.gateRms ?? 0.008} />
       <dl className="stats">
@@ -45,7 +47,12 @@ export function ListenPanel({ session }: ListenPanelProps) {
         <button className="primary" onClick={() => void session.startMic()} disabled={session.running && session.inputMode === "microphone"}>
           {session.running && session.inputMode === "microphone" ? "Microphone live" : "Enable microphone"}
         </button>
-        <button onClick={() => session.useSimulator()}>Simulator</button>
+        <button
+          className={session.running && session.inputMode === "simulator" ? "primary" : ""}
+          onClick={() => session.useSimulator()}
+        >
+          {session.running && session.inputMode === "simulator" ? "Simulator live" : "Simulator"}
+        </button>
         <button onClick={session.stop} disabled={!session.running}>
           Stop
         </button>

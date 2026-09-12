@@ -147,11 +147,19 @@ export function usePitchSession(): PitchSession {
     setSampleRate(ctx.sampleRate);
     detectorRef.current.reset();
     const silence = new Float32Array(FRAME_SIZE);
-    const tick = () => {
+    const hop = Math.floor(FRAME_SIZE / 2);
+    const hopMs = (hop / ctx.sampleRate) * 1000;
+    let lastTs = 0;
+    const tick = (ts: number) => {
+      if (lastTs !== 0 && ts - lastTs < hopMs * 0.9) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      lastTs = ts;
       const sim = simBufferRef.current;
       if (sim && simOffsetRef.current + FRAME_SIZE < sim.length) {
-        const frame = sim.subarray(simOffsetRef.current, simOffsetRef.current + FRAME_SIZE);
-        simOffsetRef.current += Math.floor(FRAME_SIZE / 2);
+        const frame = sim.slice(simOffsetRef.current, simOffsetRef.current + FRAME_SIZE);
+        simOffsetRef.current += hop;
         ingest(frame, ctx.sampleRate);
       } else {
         if (sim) {
@@ -168,7 +176,7 @@ export function usePitchSession(): PitchSession {
 
   const playSimulatedNote = useCallback((midi: number) => {
     const rate = audioRef.current?.sampleRate ?? 48000;
-    simBufferRef.current = pianoTone(midiToFreq(midi), rate, 1.1, { amplitude: 0.32, harmonics: 6 });
+    simBufferRef.current = pianoTone(midiToFreq(midi), rate, 1.8, { amplitude: 0.4, harmonics: 6 });
     simOffsetRef.current = 0;
     detectorRef.current.reset();
   }, []);

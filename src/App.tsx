@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePitchSession } from "./audio/usePitchSession";
 import { PianoKeyboard } from "./components/PianoKeyboard";
 import { CalibrationWizard } from "./components/CalibrationWizard";
 import { ListenPanel } from "./components/ListenPanel";
 import { PracticePanel } from "./components/PracticePanel";
+import { midiToNoteName } from "./audio/note";
 
 type Tab = "listen" | "calibrate" | "practice";
 
@@ -11,7 +12,18 @@ export function App() {
   const session = usePitchSession();
   const [tab, setTab] = useState<Tab>("listen");
   const [practiceTarget, setPracticeTarget] = useState(60);
+  const [heldMidi, setHeldMidi] = useState<number | null>(null);
   const onTargetChange = useCallback((midi: number) => setPracticeTarget(midi), []);
+  const liveMidi = session.state?.midi ?? null;
+
+  useEffect(() => {
+    if (liveMidi !== null) {
+      setHeldMidi(liveMidi);
+      return;
+    }
+    const timer = window.setTimeout(() => setHeldMidi(null), 1400);
+    return () => window.clearTimeout(timer);
+  }, [liveMidi]);
 
   const onKey = (midi: number) => {
     if (!session.running || session.inputMode !== "simulator") {
@@ -19,6 +31,8 @@ export function App() {
     }
     session.playSimulatedNote(midi);
   };
+
+  const displayMidi = liveMidi ?? heldMidi;
 
   return (
     <div className="app">
@@ -41,7 +55,7 @@ export function App() {
       </header>
 
       <main>
-        {tab === "listen" && <ListenPanel session={session} />}
+        {tab === "listen" && <ListenPanel session={session} displayMidi={displayMidi} />}
         {tab === "calibrate" && <CalibrationWizard session={session} />}
         {tab === "practice" && (
           <PracticePanel session={session} target={practiceTarget} onTargetChange={onTargetChange} />
@@ -55,14 +69,14 @@ export function App() {
             {session.running ? " · live" : " · stopped"}
           </span>
           <span>
-            Heard: <strong>{session.state?.note ?? "none"}</strong>
+            Heard: <strong>{displayMidi !== null ? midiToNoteName(displayMidi) : "none"}</strong>
           </span>
           <span>
             Cal: <strong>{session.calibration?.quality ?? "unset"}</strong>
           </span>
         </div>
         <PianoKeyboard
-          activeMidi={session.state?.midi ?? null}
+          activeMidi={displayMidi}
           targetMidi={tab === "practice" ? practiceTarget : null}
           onKey={onKey}
         />

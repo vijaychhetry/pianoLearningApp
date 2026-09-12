@@ -64,7 +64,7 @@ export function CalibrationWizard({ session }: CalibrationWizardProps) {
     if (session.inputMode === "simulator") {
       session.playSimulatedNote(69);
     }
-    const frames = await session.captureFrames(2200);
+    const frames = await session.captureFrames(2500);
     const noise = {
       noiseFloorRms: session.calibration?.noiseFloorRms ?? 0.002,
       gateRms: session.calibration?.gateRms ?? 0.008,
