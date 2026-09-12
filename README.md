@@ -4,6 +4,9 @@ Web app that listens to a piano through the microphone, names the note, and
 drives a simple practice loop. Calibration is a first-class flow because that is
 where most microphone piano tutors fail.
 
+**What is being built?** Read [`docs/SPEC.md`](docs/SPEC.md) (product spec).
+The pitch-detection design is in [`docs/FIX_PLAN.md`](docs/FIX_PLAN.md).
+
 ## Why recognition usually fails
 
 | Symptom | Typical cause | What this app does |
