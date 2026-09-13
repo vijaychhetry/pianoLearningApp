@@ -58,6 +58,54 @@ internal fun detectPitchHps(
     return (peakBin + delta) * spec.sampleRate / spec.n
 }
 
+/**
+ * Two strong peaks that are not integer harmonics of each other → polyphony.
+ * Harmonic-rich single notes (2f, 3f, …) must not trip this.
+ */
+internal fun isPolyphonic(
+    spec: Spectrum,
+    minFreq: Double,
+    maxFreq: Double,
+    relativePeak: Double = 0.32,
+    minSeparationCents: Double = 90.0,
+): Boolean {
+    val mag = spec.mag
+    val minBin = maxOf(2, Math.floor(minFreq * spec.n / spec.sampleRate).toInt())
+    val maxBin = minOf(mag.size - 2, Math.ceil(maxFreq * spec.n / spec.sampleRate).toInt())
+    var maxMag = 0.0
+    for (i in minBin..maxBin) if (mag[i] > maxMag) maxMag = mag[i]
+    if (maxMag <= 0.0) return false
+    val floor = maxMag * relativePeak
+    val peaks = ArrayList<Pair<Int, Double>>(8)
+    for (i in (minBin + 1) until maxBin) {
+        if (mag[i] < floor) continue
+        if (mag[i] <= mag[i - 1] || mag[i] < mag[i + 1]) continue
+        val last = peaks.lastOrNull()
+        if (last != null && i - last.first < 3) {
+            if (mag[i] > last.second) peaks[peaks.lastIndex] = i to mag[i]
+        } else {
+            peaks.add(i to mag[i])
+        }
+    }
+    if (peaks.size < 2) return false
+    peaks.sortByDescending { it.second }
+    fun hz(bin: Int): Double = bin.toDouble() * spec.sampleRate / spec.n
+    val f0 = hz(peaks[0].first)
+    val m0 = peaks[0].second
+    val limit = minOf(peaks.size, 6)
+    for (k in 1 until limit) {
+        val f = hz(peaks[k].first)
+        val m = peaks[k].second
+        if (m < m0 * relativePeak) continue
+        val ratio = maxOf(f, f0) / minOf(f, f0)
+        val nearest = Math.round(ratio).toDouble()
+        val harmonic = nearest >= 2.0 && nearest <= 8.0 && kotlin.math.abs(ratio - nearest) < 0.10
+        val cents = 1200.0 * kotlin.math.abs(Math.log(f / f0) / Math.log(2.0))
+        if (!harmonic && cents > minSeparationCents) return true
+    }
+    return false
+}
+
 internal fun resolveOctave(yinHz: Double, hpsHz: Double?, spec: Spectrum?): Double {
     if (hpsHz == null || !hpsHz.isFinite() || yinHz <= 0) return yinHz
     val ratio = yinHz / hpsHz

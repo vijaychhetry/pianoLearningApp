@@ -38,6 +38,7 @@ data class PitchResult(
     val latencyMs: Long,
     val yinHz: Double? = null,
     val hpsHz: Double? = null,
+    val ambiguous: Boolean = false,
 )
 
 data class RecognizedNote(

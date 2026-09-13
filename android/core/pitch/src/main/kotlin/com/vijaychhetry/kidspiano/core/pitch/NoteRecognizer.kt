@@ -12,6 +12,7 @@ class DefaultNoteRecognizer(
     private val minConfidence: Double = 0.55,
 ) : NoteRecognizer {
     override fun recognize(pitch: PitchResult): RecognizedNote? {
+        if (pitch.ambiguous) return null
         val midi = pitch.midiNote ?: return null
         val freq = pitch.frequency ?: return null
         if (pitch.confidence < minConfidence) return null

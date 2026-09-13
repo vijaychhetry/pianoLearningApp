@@ -23,6 +23,13 @@ fun pianoTone(
     return out
 }
 
+fun mixTones(a: FloatArray, b: FloatArray): FloatArray {
+    val n = minOf(a.size, b.size)
+    val out = FloatArray(n)
+    for (i in 0 until n) out[i] = a[i] + b[i]
+    return out
+}
+
 fun sineTone(frequency: Double, sampleRate: Int, durationSec: Double, amplitude: Float = 0.4f): FloatArray {
     val n = (sampleRate * durationSec).toInt()
     val out = FloatArray(n)

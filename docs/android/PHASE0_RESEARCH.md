@@ -55,9 +55,11 @@ Not silence+A4. Per-note statistical profiles for C–G, then a blind C–G test
 
 ## Test plan
 
-**Tier 1 (this environment, JVM):** frequency↔MIDI, YIN on synthetic sines and harmonic tones, debounce state machine, `NoteValidator` including octave mismatch and low-confidence → not wrong.
+Mapped acceptance criteria and JVM test method names: [`ACCEPTANCE_CRITERIA.md`](ACCEPTANCE_CRITERIA.md).
 
-**Tier 2 (physical device, later):** `AudioRecord` source actually applied, sample rate, per-note latency, PSR-F52 at music-stand distance.
+**Tier 1 (this environment, JVM):** frequency↔MIDI, YIN on synthetic sines and harmonic tones (Hz, not just MIDI), polyphony → `AMBIGUOUS`, debounce state machine, `NoteValidator` (octave mismatch, between-note, low-confidence never wrong), calibration median/IQR/C–G completeness, `RecognitionPipeline`.
+
+**Tier 2 (physical device, later):** `AudioRecord` source actually applied, sample rate, per-note latency, PSR-F52 at music-stand distance. Not covered by empty instrumented tests.
 
 ## Phase 1 success (Audio Lab only)
 

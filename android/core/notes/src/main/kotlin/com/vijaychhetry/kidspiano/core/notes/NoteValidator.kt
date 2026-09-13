@@ -3,18 +3,23 @@ package com.vijaychhetry.kidspiano.core.notes
 import com.vijaychhetry.kidspiano.core.common.RecognitionStatus
 import com.vijaychhetry.kidspiano.core.common.RecognizedNote
 import com.vijaychhetry.kidspiano.core.common.ValidationResult
+import kotlin.math.abs
 
 interface NoteValidator {
     fun validate(expected: Int, detected: RecognizedNote?): ValidationResult
 }
 
 /**
- * Beginner policy (spec §44): same letter in another octave is a soft match,
- * never treat low confidence as INCORRECT.
+ * Beginner policy (spec §5, §44): same letter in another octave is a soft match.
+ * Low confidence and between-note pitches must never become INCORRECT or CORRECT.
+ *
+ * @param unclearBelow kept as the documented low-confidence floor (spec LOW_CONFIDENCE).
+ * Anything below [highConfidence] retries; this floor is the value tests pin as "never wrong".
  */
 class DefaultNoteValidator(
     private val highConfidence: Double = 0.7,
     private val unclearBelow: Double = 0.55,
+    private val maxCentsFromNamedNote: Double = 40.0,
 ) : NoteValidator {
     override fun validate(expected: Int, detected: RecognizedNote?): ValidationResult {
         if (detected == null) {
@@ -26,16 +31,15 @@ class DefaultNoteValidator(
                 message = "I couldn't hear that clearly. Try again.",
             )
         }
-        if (detected.confidence < unclearBelow) {
-            return ValidationResult(
-                status = RecognitionStatus.UNCLEAR,
-                expectedNote = expected,
-                detectedNote = detected.midi,
-                confidence = detected.confidence,
-                message = "I couldn't hear that clearly. Try again.",
-            )
+        val centsFromNamed = abs(centsOff(detected.frequency, detected.midi))
+        if (centsFromNamed > maxCentsFromNamedNote) {
+            return retry(RecognitionStatus.AMBIGUOUS, expected, detected)
         }
-        if (detected.midi == expected && detected.confidence >= highConfidence) {
+        if (detected.confidence < highConfidence) {
+            check(unclearBelow <= highConfidence)
+            return retry(RecognitionStatus.UNCLEAR, expected, detected)
+        }
+        if (detected.midi == expected) {
             return ValidationResult(
                 status = RecognitionStatus.CORRECT,
                 expectedNote = expected,
@@ -53,15 +57,6 @@ class DefaultNoteValidator(
                 message = "Right note, try the other ${midiToNoteName(expected).dropLast(1)}!",
             )
         }
-        if (detected.confidence < highConfidence) {
-            return ValidationResult(
-                status = RecognitionStatus.UNCLEAR,
-                expectedNote = expected,
-                detectedNote = detected.midi,
-                confidence = detected.confidence,
-                message = "I couldn't hear that clearly. Try again.",
-            )
-        }
         return ValidationResult(
             status = RecognitionStatus.INCORRECT,
             expectedNote = expected,
@@ -70,4 +65,16 @@ class DefaultNoteValidator(
             message = "Try ${midiToNoteName(expected)}!",
         )
     }
+
+    private fun retry(
+        status: RecognitionStatus,
+        expected: Int,
+        detected: RecognizedNote,
+    ) = ValidationResult(
+        status = status,
+        expectedNote = expected,
+        detectedNote = detected.midi,
+        confidence = detected.confidence,
+        message = "I couldn't hear that clearly. Try again.",
+    )
 }

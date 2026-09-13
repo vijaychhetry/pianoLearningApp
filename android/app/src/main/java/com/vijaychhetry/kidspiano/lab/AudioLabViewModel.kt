@@ -63,10 +63,12 @@ class AudioLabViewModel : ViewModel() {
             collectJob = viewModelScope.launch {
                 input.audioFrames().collect { frame ->
                     val pitch = detector.detect(frame)
-                    val phase = debouncer.onFrame(pitch.midiNote)
+                    val lockMidi = if (pitch.ambiguous) null else pitch.midiNote
+                    val phase = debouncer.onFrame(lockMidi)
                     val name = pitch.midiNote?.let { midiToNoteName(it) } ?: "—"
                     val status = when {
                         pitch.midiNote == null -> RecognitionStatus.NO_SIGNAL
+                        pitch.ambiguous -> RecognitionStatus.AMBIGUOUS
                         pitch.confidence < 0.55 -> RecognitionStatus.LOW_CONFIDENCE
                         phase == NotePhase.STABLE -> RecognitionStatus.HIGH_CONFIDENCE
                         else -> RecognitionStatus.NOTE_DETECTED

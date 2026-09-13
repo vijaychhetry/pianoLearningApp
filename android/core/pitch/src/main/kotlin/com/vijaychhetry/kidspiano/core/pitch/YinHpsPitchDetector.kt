@@ -31,6 +31,7 @@ class YinHpsPitchDetector(
         val yin = detectPitchYin(frame.samples, frame.sampleRate, minFreq = minFreq, maxFreq = maxFreq)
         val spec = computeSpectrum(frame.samples, frame.sampleRate)
         val hps = detectPitchHps(spec, minFreq, maxFreq, 4)
+        val polyphonic = isPolyphonic(spec, minFreq, maxFreq)
         val freq = if (yin.frequency != null && yin.probability >= probabilityThreshold) {
             resolveOctave(yin.frequency, hps, spec)
         } else {
@@ -49,6 +50,7 @@ class YinHpsPitchDetector(
             latencyMs = elapsedMs(started),
             yinHz = yin.frequency,
             hpsHz = hps,
+            ambiguous = polyphonic,
         )
     }
 
