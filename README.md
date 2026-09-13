@@ -4,8 +4,14 @@ Web app that listens to a piano through the microphone, names the note, and
 drives a simple practice loop. Calibration is a first-class flow because that is
 where most microphone piano tutors fail.
 
-**What is being built?** Read [`docs/SPEC.md`](docs/SPEC.md) (product spec).
-The pitch-detection design is in [`docs/FIX_PLAN.md`](docs/FIX_PLAN.md).
+**Canonical product spec (kids Android app):** [`docs/KIDS_PIANO_MASTER_SPEC.md`](docs/KIDS_PIANO_MASTER_SPEC.md)
+
+**Are we building that?** No — not with this React site. Recommendation:
+[`docs/SPEC_GAP.md`](docs/SPEC_GAP.md). Start a native Android app; keep this
+tree as an audio lab / prototype.
+
+**Web prototype notes:** [`docs/SPEC.md`](docs/SPEC.md). Pitch-detection design:
+[`docs/FIX_PLAN.md`](docs/FIX_PLAN.md).
 
 ## Why recognition usually fails
 

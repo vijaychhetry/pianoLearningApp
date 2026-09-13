@@ -1,5 +1,10 @@
 # Piano Learning App — product spec (v1)
 
+> **Not the kids product.** Canonical product spec is
+> [`KIDS_PIANO_MASTER_SPEC.md`](KIDS_PIANO_MASTER_SPEC.md).
+> This file describes the **web prototype** that already exists in `src/`.
+> See [`SPEC_GAP.md`](SPEC_GAP.md) for why a new Android app is required.
+
 There was no product spec before this file. `docs/FIX_PLAN.md` is the
 **engineering** plan for pitch detection. This document is the **product** spec:
 what is being built, for whom, and what “working” means.
