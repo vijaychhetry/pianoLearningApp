@@ -1,11 +1,14 @@
 # Piano Learning App
 
-Web app that listens to a piano through the microphone, names the note, and
-drives a simple practice loop. Calibration is a first-class flow because that is
-where most microphone piano tutors fail.
+Two things live in this repo:
 
-**What is being built?** Read [`docs/SPEC.md`](docs/SPEC.md) (product spec).
-The pitch-detection design is in [`docs/FIX_PLAN.md`](docs/FIX_PLAN.md).
+1. **Product (start here):** native Android app in [`android/`](android/) — Phase 1 Audio Lab.
+   Spec: [`docs/KIDS_PIANO_MASTER_SPEC.md`](docs/KIDS_PIANO_MASTER_SPEC.md).
+2. **Web prototype:** the Vite/React tuner at the repo root. Lab only, not the kids app.
+
+Open **`android/`** in Android Studio, run `app`, allow the microphone, play one piano key.
+
+Details: [`android/README.md`](android/README.md) and [`docs/android/PHASE0_RESEARCH.md`](docs/android/PHASE0_RESEARCH.md).
 
 ## Why recognition usually fails
 
