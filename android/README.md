@@ -16,6 +16,10 @@ Phase 1: **Piano Audio Lab** only — live pitch, no games.
 | `:core:audio` | `AudioRecord` with UNPROCESSED → fallback, drop-oldest queue |
 | `:app` | Compose Audio Lab screen |
 
+## Download APK (no Android Studio)
+
+A debug APK is in [`releases/KidsPianoLab-debug-0.1.0.apk`](../releases/KidsPianoLab-debug-0.1.0.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+
 ## Open in Android Studio
 
 1. Install Android Studio (Ladybug / API 35 SDK).
