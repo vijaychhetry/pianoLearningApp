@@ -117,6 +117,26 @@ class CalibrationEngineTest {
     }
 
     @Test
+    fun acCal06b_aWobblyPlayerOnEveryKeyIsGoodNotExcellent() {
+        // What the guided flow actually produces: four presses per note, but
+        // 30 cents of press-to-press variation.
+        val samples = MVP_CALIBRATION_MIDI.associateWith { midi ->
+            val f = midiToFreq(midi)
+            listOf(-30.0, -10.0, 10.0, 30.0).map { cents -> f * Math.pow(2.0, cents / 1200.0) }
+        }
+        val profile = engine.buildProfile(samples, 44100, "MIC")
+        assertEquals(CalibrationProfile.Quality.GOOD, profile.calibrationQuality)
+        assertTrue(profile.usableAsDefault)
+        for (note in profile.notes) {
+            assertEquals(4, note.sampleCount)
+            assertTrue(
+                note.frequencySpread in 3.0..10.0,
+                "midi ${note.midiNote} spread=${note.frequencySpread} should sit in the good band",
+            )
+        }
+    }
+
+    @Test
     fun acCal07_twoPressesPerNoteIsNeverGoodEnough() {
         val samples = MVP_CALIBRATION_MIDI.associateWith { cluster(it, count = 2, jitterHz = 0.05) }
         val profile = engine.buildProfile(samples, 44100, "MIC")

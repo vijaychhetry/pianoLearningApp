@@ -61,11 +61,13 @@ class CalibrationSessionTest {
     @Test
     fun acSess05_fullRunCompletesAndScoresExcellent() {
         val session = CalibrationSession(samplesPerNote = 8)
-        while (!session.isComplete) {
-            val midi = session.currentMidi!!
+        // Bounded: a broken press contract must fail here, not hang the suite.
+        repeat(5 * 8) {
+            val midi = session.currentMidi ?: return@repeat
             val hz = midiToFreq(midi) + (session.acceptedCount(midi) % 3) * 0.1
             assertEquals(CalibrationSession.Offer.ACCEPTED, session.press(midi, hz))
         }
+        assertTrue(session.isComplete, "40 clean presses must finish five notes of eight")
         assertNull(session.currentMidi)
         assertEquals(1f, session.progress)
         assertEquals(CalibrationSession.Offer.DONE, session.press(60, midiToFreq(60)))
@@ -82,10 +84,11 @@ class CalibrationSessionTest {
     fun acSess06_skippedNoteCannotProduceAnExcellentProfile() {
         val session = CalibrationSession(samplesPerNote = 8)
         session.skipCurrent()
-        while (!session.isComplete) {
-            val midi = session.currentMidi!!
+        repeat(4 * 8) {
+            val midi = session.currentMidi ?: return@repeat
             session.press(midi, midiToFreq(midi))
         }
+        assertTrue(session.isComplete)
         val profile = session.buildProfile(MedianCalibrationEngine(), 44100, "MIC")
         assertNotEquals(CalibrationProfile.Quality.EXCELLENT, profile.calibrationQuality)
         assertEquals(CalibrationProfile.Quality.NEEDS_IMPROVEMENT, profile.calibrationQuality)

@@ -93,15 +93,6 @@ class LabSession(
         return last
     }
 
-    fun onSourceHealthy() {
-        sourceLooksDead = false
-    }
-
-    fun exhausted(message: String): LabSnapshot {
-        last = last.copy(hint = message, log = log.entries)
-        return last
-    }
-
     private fun idleSnapshot(hint: String) = LabSnapshot(
         status = RecognitionStatus.NO_SIGNAL,
         noteName = NO_NOTE,

@@ -100,8 +100,10 @@ class YinHpsPitchDetectorTest {
     @Test
     fun acPitch07b_theTopOfTheRangeIsWiderThanTheOldEightHundredHertzCeiling() {
         val c6 = midiToFreq(84)
-        assertTrue(c6 > 800.0, "C6 is ${"%.1f".format(c6)} Hz and must be inside the range")
-        assertTrue(YinHpsPitchDetector.MAX_FREQ_HZ > c6)
+        assertTrue(
+            YinHpsPitchDetector.MAX_FREQ_HZ > c6,
+            "C6 is ${"%.1f".format(c6)} Hz and must be inside the detector range",
+        )
         val result = detector.detect(pianoFrame(c6))
         assertEquals(84, result.midiNote)
         assertTrue(abs(result.frequency!! - c6) < 6.0)

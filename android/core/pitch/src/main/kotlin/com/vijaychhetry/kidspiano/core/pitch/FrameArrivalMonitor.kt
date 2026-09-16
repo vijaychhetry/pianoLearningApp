@@ -31,10 +31,4 @@ class FrameArrivalMonitor(private val stallMs: Long = 1_500) {
         reported = true
         return true
     }
-
-    fun reset() {
-        startedAtMs = null
-        lastFrameAtMs = null
-        reported = false
-    }
 }

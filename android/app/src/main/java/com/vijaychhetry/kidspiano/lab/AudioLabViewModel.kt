@@ -10,8 +10,10 @@ import com.vijaychhetry.kidspiano.core.pitch.LabSession
 import com.vijaychhetry.kidspiano.core.pitch.LabSnapshot
 import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
 import com.vijaychhetry.kidspiano.core.pitch.NotePhase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +54,13 @@ class AudioLabViewModel : ViewModel() {
     private var collectJob: Job? = null
     private var tickJob: Job? = null
 
+    /**
+     * What the user last asked for. Start and stop queue behind [control], so
+     * a tap must not be judged against state a pending coroutine has yet to
+     * write.
+     */
+    private var wantRunning = false
+
     private val _state = MutableStateFlow(AudioLabState())
     val state: StateFlow<AudioLabState> = _state
 
@@ -60,9 +69,11 @@ class AudioLabViewModel : ViewModel() {
     }
 
     fun start() {
-        if (_state.value.running) return
+        if (wantRunning) return
+        wantRunning = true
         viewModelScope.launch {
             control.withLock {
+                if (!wantRunning) return@withLock
                 sources.reset()
                 session.clearLog()
                 beginCapture()
@@ -72,14 +83,15 @@ class AudioLabViewModel : ViewModel() {
     }
 
     fun stop() {
+        if (!wantRunning) return
+        wantRunning = false
+        _state.update {
+            it.copy(running = false, hint = "Stopped. Tap Start listening to try again.")
+        }
         viewModelScope.launch {
             control.withLock {
-                tickJob?.cancel()
-                tickJob = null
+                stopTicker()
                 endCapture()
-                _state.update {
-                    it.copy(running = false, hint = "Stopped. Tap Start listening to try again.")
-                }
             }
         }
     }
@@ -89,7 +101,7 @@ class AudioLabViewModel : ViewModel() {
         viewModelScope.launch {
             control.withLock {
                 val next = sources.forceAdvance()
-                if (!_state.value.running) {
+                if (!wantRunning) {
                     _state.update {
                         it.copy(
                             sourceLabel = AudioRecordInput.sourceName(next),
@@ -124,7 +136,7 @@ class AudioLabViewModel : ViewModel() {
         tickJob = viewModelScope.launch {
             while (isActive) {
                 delay(TICK_MS)
-                if (!_state.value.running) continue
+                if (!wantRunning) continue
                 control.withLock {
                     session.onTick(System.currentTimeMillis())?.let { publish(it) }
                     if (session.sourceLooksDead) rotateAfterSilence()
@@ -133,13 +145,25 @@ class AudioLabViewModel : ViewModel() {
         }
     }
 
+    private fun stopTicker() {
+        tickJob?.cancel()
+        tickJob = null
+    }
+
     private suspend fun beginCapture() {
         while (true) {
             try {
                 withContext(Dispatchers.IO) { input.start(sources.current) }
                 break
+            } catch (e: CancellationException) {
+                // The scope died while the mic was opening. Cancellation is
+                // not interruption, so the recorder is live and only this
+                // frame of control can still close it.
+                withContext(NonCancellable + Dispatchers.IO) { input.stop() }
+                throw e
             } catch (e: Exception) {
                 if (sources.advance() == null) {
+                    wantRunning = false
                     _state.update {
                         it.copy(
                             running = false,
@@ -186,6 +210,8 @@ class AudioLabViewModel : ViewModel() {
     private suspend fun rotateAfterSilence() {
         val next = sources.advance()
         if (next == null) {
+            wantRunning = false
+            stopTicker()
             endCapture()
             _state.update {
                 it.copy(running = false, hint = EXHAUSTED_HINT, events = session.snapshot.log)
