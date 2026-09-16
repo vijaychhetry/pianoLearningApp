@@ -18,6 +18,14 @@ import kotlin.concurrent.thread
  * `STATE_INITIALIZED` does not prove a source works — some phones accept
  * UNPROCESSED and return silence — so the caller can pin a specific source and
  * retry. See `SilenceWatchdog`.
+ *
+ * The capture thread owns its `AudioRecord` for its whole life and is the only
+ * thread that releases it. `AudioRecord.stop()` is safe to call from another
+ * thread and unblocks a pending `read()`; `release()` is not, and calling it
+ * under a blocked reader is a native use-after-free.
+ *
+ * [start] and [stop] can block for up to half a second, so call them off the
+ * main thread.
  */
 class AudioRecordInput(
     private val requestedSampleRate: Int = 44100,
@@ -46,6 +54,10 @@ class AudioRecordInput(
     @Synchronized
     fun start(preferredSource: Int?) {
         if (running) return
+        // Let the previous capture release its recorder; some devices refuse a
+        // second concurrent AudioRecord.
+        worker?.join(WORKER_EXIT_TIMEOUT_MS)
+        worker = null
         val started = openRecorder(preferredSource)
         started.startRecording()
         if (started.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
@@ -54,48 +66,52 @@ class AudioRecordInput(
         }
         record = started
         running = true
+        val rate = appliedSampleRate
         worker = thread(name = "piano-audio", isDaemon = true) {
             Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
             val shortBuf = ShortArray(frameSize)
             val floatBuf = FloatArray(frameSize)
-            while (running) {
-                val rec = record ?: break
-                val read = rec.read(shortBuf, 0, shortBuf.size)
-                if (read <= 0) continue
-                for (i in 0 until read) {
-                    floatBuf[i] = shortBuf[i] / 32768f
+            try {
+                while (running) {
+                    val read = started.read(shortBuf, 0, shortBuf.size)
+                    if (read <= 0) continue
+                    for (i in 0 until read) {
+                        floatBuf[i] = shortBuf[i] / 32768f
+                    }
+                    if (read < frameSize) {
+                        for (i in read until frameSize) floatBuf[i] = 0f
+                    }
+                    frames.tryEmit(
+                        AudioFrame(
+                            samples = floatBuf.copyOf(),
+                            sampleRate = rate,
+                            capturedAtMs = System.currentTimeMillis(),
+                        ),
+                    )
                 }
-                if (read < frameSize) {
-                    for (i in read until frameSize) floatBuf[i] = 0f
+            } finally {
+                try {
+                    started.stop()
+                } catch (_: IllegalStateException) {
                 }
-                frames.tryEmit(
-                    AudioFrame(
-                        samples = floatBuf.copyOf(),
-                        sampleRate = appliedSampleRate,
-                        capturedAtMs = System.currentTimeMillis(),
-                    ),
-                )
+                started.release()
             }
         }
     }
 
     @Synchronized
     override fun stop() {
+        if (!running) return
         running = false
-        worker?.join(500)
-        worker = null
-        record?.run {
-            try {
-                stop()
-            } catch (_: IllegalStateException) {
-            }
-            release()
+        try {
+            record?.stop()
+        } catch (_: IllegalStateException) {
         }
         record = null
     }
 
     private fun openRecorder(preferredSource: Int?): AudioRecord {
-        val sources = if (preferredSource != null) intArrayOf(preferredSource) else SOURCE_ORDER
+        val sources = if (preferredSource != null) listOf(preferredSource) else SOURCE_ORDER
         val min = AudioRecord.getMinBufferSize(
             requestedSampleRate,
             AudioFormat.CHANNEL_IN_MONO,
@@ -126,7 +142,9 @@ class AudioRecordInput(
     }
 
     companion object {
-        val SOURCE_ORDER = intArrayOf(
+        private const val WORKER_EXIT_TIMEOUT_MS = 500L
+
+        val SOURCE_ORDER: List<Int> = listOf(
             MediaRecorder.AudioSource.UNPROCESSED,
             MediaRecorder.AudioSource.VOICE_RECOGNITION,
             MediaRecorder.AudioSource.MIC,
@@ -137,12 +155,6 @@ class AudioRecordInput(
             MediaRecorder.AudioSource.VOICE_RECOGNITION -> "VOICE_RECOGNITION"
             MediaRecorder.AudioSource.MIC -> "MIC"
             else -> "source $source"
-        }
-
-        /** The source after [source] in [SOURCE_ORDER], wrapping around. */
-        fun nextSource(source: Int): Int {
-            val i = SOURCE_ORDER.indexOf(source)
-            return SOURCE_ORDER[(if (i < 0) 0 else i + 1) % SOURCE_ORDER.size]
         }
     }
 }

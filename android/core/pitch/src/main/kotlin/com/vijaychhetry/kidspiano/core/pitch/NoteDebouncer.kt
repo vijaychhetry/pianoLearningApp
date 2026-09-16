@@ -63,7 +63,8 @@ class NoteDebouncer(private val config: DebounceConfig = DebounceConfig()) {
         return phase
     }
 
-    private fun reset() {
+    /** Drop any press in flight, e.g. after the microphone source changed. */
+    fun reset() {
         phase = NotePhase.IDLE
         candidate = null
         lockedMidi = null

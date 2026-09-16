@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlin.math.log10
+import com.vijaychhetry.kidspiano.core.pitch.levelFraction
 
 @Composable
 fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
@@ -156,12 +156,6 @@ private fun LevelMeter(level: Double, peak: Double) {
             style = MaterialTheme.typography.labelSmall,
         )
     }
-}
-
-internal fun levelFraction(rms: Double): Float {
-    if (rms <= 0.00001) return 0f
-    val db = 20.0 * log10(rms)
-    return ((db + 60.0) / 60.0).coerceIn(0.0, 1.0).toFloat()
 }
 
 @Composable

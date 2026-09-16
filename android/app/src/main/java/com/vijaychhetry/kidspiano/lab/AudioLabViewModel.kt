@@ -5,28 +5,33 @@ import androidx.lifecycle.viewModelScope
 import com.vijaychhetry.kidspiano.core.audio.AudioRecordInput
 import com.vijaychhetry.kidspiano.core.common.PitchResult
 import com.vijaychhetry.kidspiano.core.common.RecognitionStatus
-import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
-import com.vijaychhetry.kidspiano.core.pitch.LabEventLog
 import com.vijaychhetry.kidspiano.core.pitch.LabLogEntry
-import com.vijaychhetry.kidspiano.core.pitch.NoteDebouncer
+import com.vijaychhetry.kidspiano.core.pitch.LabSession
+import com.vijaychhetry.kidspiano.core.pitch.LabSnapshot
+import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
 import com.vijaychhetry.kidspiano.core.pitch.NotePhase
-import com.vijaychhetry.kidspiano.core.pitch.SilenceWatchdog
-import com.vijaychhetry.kidspiano.core.pitch.YinHpsPitchDetector
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 data class AudioLabState(
     val running: Boolean = false,
     val permissionNeeded: Boolean = true,
     val error: String? = null,
-    val hint: String = "Tap Start listening, then play one key.",
+    val hint: String = LabSession.START_HINT,
     val sourceLabel: String = "—",
     val sampleRate: Int = 0,
     val pitch: PitchResult? = null,
-    val noteName: String = "—",
+    val noteName: String = LabSession.NO_NOTE,
     val status: RecognitionStatus = RecognitionStatus.NO_SIGNAL,
     val phase: NotePhase = NotePhase.IDLE,
     val level: Double = 0.0,
@@ -35,14 +40,17 @@ data class AudioLabState(
     val events: List<LabLogEntry> = emptyList(),
 )
 
+/**
+ * Thin adapter over [LabSession]: everything the screen promises is decided
+ * there so it can be tested against real audio off-device.
+ */
 class AudioLabViewModel : ViewModel() {
-    private val detector = YinHpsPitchDetector()
-    private val debouncer = NoteDebouncer()
     private val input = AudioRecordInput()
-    private val log = LabEventLog()
-    private val watchdog = SilenceWatchdog()
+    private val session = LabSession()
+    private val sources = MicSourceCycler(AudioRecordInput.SOURCE_ORDER)
+    private val control = Mutex()
     private var collectJob: Job? = null
-    private var pinnedSource: Int? = null
+    private var tickJob: Job? = null
 
     private val _state = MutableStateFlow(AudioLabState())
     val state: StateFlow<AudioLabState> = _state
@@ -53,16 +61,97 @@ class AudioLabViewModel : ViewModel() {
 
     fun start() {
         if (_state.value.running) return
-        log.clear()
-        watchdog.reset()
-        try {
-            input.start(pinnedSource)
-        } catch (e: Exception) {
-            _state.update {
-                it.copy(running = false, error = e.message ?: "Microphone failed", hint = "")
+        viewModelScope.launch {
+            control.withLock {
+                sources.reset()
+                session.clearLog()
+                beginCapture()
             }
-            return
         }
+        startTicker()
+    }
+
+    fun stop() {
+        viewModelScope.launch {
+            control.withLock {
+                tickJob?.cancel()
+                tickJob = null
+                endCapture()
+                _state.update {
+                    it.copy(running = false, hint = "Stopped. Tap Start listening to try again.")
+                }
+            }
+        }
+    }
+
+    /** Try another `AudioSource`; some phones return silence on UNPROCESSED. */
+    fun switchSource() {
+        viewModelScope.launch {
+            control.withLock {
+                val next = sources.forceAdvance()
+                if (!_state.value.running) {
+                    _state.update {
+                        it.copy(
+                            sourceLabel = AudioRecordInput.sourceName(next),
+                            hint = "Will use ${AudioRecordInput.sourceName(next)}. Tap Start listening.",
+                        )
+                    }
+                    return@withLock
+                }
+                endCapture()
+                beginCapture()
+                if (_state.value.running) {
+                    _state.update { it.copy(hint = "Now using ${AudioRecordInput.sourceName(next)}.") }
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        tickJob?.cancel()
+        collectJob?.cancel()
+        input.stop()
+        super.onCleared()
+    }
+
+    /**
+     * Runs off the audio flow so a source that opens but never delivers a
+     * frame is still visible, and so the automatic switch is never performed
+     * by the collector it is about to cancel.
+     */
+    private fun startTicker() {
+        if (tickJob != null) return
+        tickJob = viewModelScope.launch {
+            while (isActive) {
+                delay(TICK_MS)
+                if (!_state.value.running) continue
+                control.withLock {
+                    session.onTick(System.currentTimeMillis())?.let { publish(it) }
+                    if (session.sourceLooksDead) rotateAfterSilence()
+                }
+            }
+        }
+    }
+
+    private suspend fun beginCapture() {
+        while (true) {
+            try {
+                withContext(Dispatchers.IO) { input.start(sources.current) }
+                break
+            } catch (e: Exception) {
+                if (sources.advance() == null) {
+                    _state.update {
+                        it.copy(
+                            running = false,
+                            error = e.message ?: "Microphone failed",
+                            hint = EXHAUSTED_HINT,
+                        )
+                    }
+                    return
+                }
+            }
+        }
+        session.begin(System.currentTimeMillis())
         _state.update {
             it.copy(
                 running = true,
@@ -72,87 +161,73 @@ class AudioLabViewModel : ViewModel() {
                 sampleRate = input.appliedSampleRate,
                 peakLevel = 0.0,
                 frameCount = 0,
-                events = emptyList(),
+                events = session.snapshot.log,
             )
         }
         collectJob = viewModelScope.launch {
             input.audioFrames().collect { frame ->
-                val pitch = detector.detect(frame)
-                val phase = debouncer.onFrame(if (pitch.ambiguous) null else pitch.midiNote)
-                val name = pitch.midiNote?.let { midiToNoteName(it) } ?: "—"
-                val status = statusOf(pitch, phase)
-                log.onFrame(status, name, pitch.confidence, pitch.frequency, frame.capturedAtMs)
-                if (watchdog.onFrame(pitch.signalStrength, frame.capturedAtMs)) {
-                    switchSource(auto = true)
-                    return@collect
-                }
-                _state.update { current ->
-                    current.copy(
-                        pitch = pitch,
-                        noteName = name,
-                        status = status,
-                        phase = phase,
-                        level = pitch.signalStrength,
-                        peakLevel = maxOf(current.peakLevel, pitch.signalStrength),
-                        frameCount = current.frameCount + 1,
-                        hint = hintFor(status, pitch),
-                        events = log.entries,
-                    )
-                }
+                val snapshot = session.onFrame(frame)
+                if (snapshot.level > HEALTHY_RMS) sources.reset()
+                publish(snapshot)
             }
         }
     }
 
-    fun stop() {
-        collectJob?.cancel()
+    private suspend fun endCapture() {
+        collectJob?.cancelAndJoin()
         collectJob = null
-        input.stop()
-        _state.update {
-            it.copy(running = false, hint = "Stopped. Tap Start listening to try again.")
+        withContext(Dispatchers.IO) { input.stop() }
+    }
+
+    /**
+     * One pass through the sources, then stop. Cycling forever on a muted
+     * phone would keep restarting capture instead of saying what is wrong.
+     */
+    private suspend fun rotateAfterSilence() {
+        val next = sources.advance()
+        if (next == null) {
+            endCapture()
+            _state.update {
+                it.copy(running = false, hint = EXHAUSTED_HINT, events = session.snapshot.log)
+            }
+            return
+        }
+        endCapture()
+        // The log deliberately survives the switch: clearing it here is what
+        // left the screen blank for the reporter.
+        beginCapture()
+        if (_state.value.running) {
+            _state.update {
+                it.copy(
+                    hint = "${AudioRecordInput.sourceName(next)}: the last source was silent, " +
+                        "switched automatically.",
+                    events = session.snapshot.log,
+                )
+            }
         }
     }
 
-    /** Try the next `AudioSource`; some phones return silence on UNPROCESSED. */
-    fun switchSource(auto: Boolean = false) {
-        val next = AudioRecordInput.nextSource(input.appliedSource)
-        val wasRunning = _state.value.running
-        stop()
-        pinnedSource = next
-        if (wasRunning) start()
+    private fun publish(snapshot: LabSnapshot) {
         _state.update {
             it.copy(
-                hint = if (auto) {
-                    "${AudioRecordInput.sourceName(next)}: the last source was silent, switched automatically."
-                } else {
-                    "Now using ${AudioRecordInput.sourceName(next)}."
-                },
+                pitch = snapshot.pitch,
+                noteName = snapshot.noteName,
+                status = snapshot.status,
+                phase = snapshot.phase,
+                level = snapshot.level,
+                peakLevel = snapshot.peakLevel,
+                frameCount = snapshot.frameCount,
+                hint = snapshot.hint,
+                events = snapshot.log,
             )
         }
     }
 
-    override fun onCleared() {
-        stop()
-        super.onCleared()
-    }
-
-    private fun statusOf(pitch: PitchResult, phase: NotePhase): RecognitionStatus = when {
-        pitch.signalStrength < YinHpsPitchDetector.MIN_RMS -> RecognitionStatus.NO_SIGNAL
-        pitch.ambiguous -> RecognitionStatus.AMBIGUOUS
-        pitch.midiNote == null -> RecognitionStatus.LISTENING
-        pitch.confidence < 0.55 -> RecognitionStatus.LOW_CONFIDENCE
-        phase == NotePhase.STABLE -> RecognitionStatus.HIGH_CONFIDENCE
-        else -> RecognitionStatus.NOTE_DETECTED
-    }
-
-    private fun hintFor(status: RecognitionStatus, pitch: PitchResult): String = when (status) {
-        RecognitionStatus.NO_SIGNAL ->
-            "Too quiet. Move the phone closer to the piano, or turn the volume up."
-        RecognitionStatus.LISTENING ->
-            "I hear sound but no clear note yet. Play a single key and hold it."
-        RecognitionStatus.AMBIGUOUS ->
-            "That sounds like more than one note. Play one key on its own."
-        RecognitionStatus.LOW_CONFIDENCE ->
-            "Almost — hold the key a little longer."
-        else -> "Heard ${pitch.midiNote?.let { midiToNoteName(it) } ?: "a note"}."
+    private companion object {
+        const val TICK_MS = 250L
+        const val HEALTHY_RMS = 0.0008
+        const val EXHAUSTED_HINT =
+            "No microphone source is sending audio. Check that KidsPiano has microphone " +
+                "permission and that nothing else is using the mic, then tap Start listening."
     }
 }
