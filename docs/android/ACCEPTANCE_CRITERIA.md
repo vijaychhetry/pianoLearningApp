@@ -20,7 +20,9 @@ cd android
 | AC-PITCH-03 | C4 must **not** report A4 / 440 Hz | `acPitch03_c4PianoToneIsNotA4` |
 | AC-PITCH-04 | Two simultaneous fundamentals (C4+E4) → `ambiguous = true` (do not guess) | `acPitch04_twoSimultaneousFundamentalsAreAmbiguous` |
 | AC-PITCH-05 | Harmonic-rich **single** C4 is **not** ambiguous | `acPitch05_harmonicRichSingleC4IsNotAmbiguous` |
+| AC-PITCH-05b | A **miked piano** note (stretched partials, hammer noise, 50 Hz hum) is not read as two notes | `acPitch05b_realPianoPartialsAndRoomNoiseAreNotAmbiguous` |
 | AC-PITCH-06 | ~452 Hz sine must stay A4 (MIDI 69), **never** HPS-fold to MIDI 50 | `acPitch06_sharpA4SineDoesNotFoldToMidi50` |
+| AC-PITCH-07 | Keys **outside** the five-note MVP (A2–G5) still report a note, so exploring the keyboard is never a dead screen | `acPitch07_keysOutsideTheFiveNoteMvpStillReadOut` |
 
 ## Note math (spec §7)
 
@@ -50,7 +52,35 @@ cd android
 | AC-DEB-02 | Switching MIDI before lock resets; neither note locks early | `acDeb02_competingCandidateResetsAndDoesNotLockEitherNote` |
 | AC-DEB-03 | One held pitch = **one** STABLE press; release + new pitch = second press | `acDeb03_oneHeldNoteIsASinglePress`, `acDeb03b_twoSeparatedNotesAreTwoPresses` |
 
-## Calibration (spec §§8–11)
+## Audio Lab log and microphone health (spec §15, §39)
+
+The log must never sit empty while the mic runs — a silent room is itself a reading. `AudioRecord.STATE_INITIALIZED` does not prove a source works; some phones accept `UNPROCESSED` and return digital silence.
+
+| ID | Criterion | Test |
+| --- | --- | --- |
+| AC-LOG-01 | The very first frame is logged, even with no signal | `LabEventLogTest.acLog01_firstFrameIsAlwaysLoggedEvenWithNoSignal` |
+| AC-LOG-02 | Identical frames do not spam, but a heartbeat line proves frames still arrive | `acLog02_identicalFramesDoNotSpamButHeartbeatProvesLiveness` |
+| AC-LOG-03/04 | A new note, or a new status on the same note, is logged at once | `acLog03_noteChangeIsLoggedImmediately`, `acLog04_statusChangeOnSameNoteIsLogged` |
+| AC-LOG-05 | `AMBIGUOUS` and `LOW_CONFIDENCE` are shown, not swallowed | `acLog05_ambiguousAndLowConfidenceAreVisibleNotSwallowed` |
+| AC-MIC-01 | A source that returns only silence is reported once after the window | `SilenceWatchdogTest.acMic01_allSilentFramesReportOnceAfterWindow` |
+| AC-MIC-02 | Real signal never trips the watchdog | `acMic02_realSignalNeverTripsTheWatchdog` |
+| AC-MIC-03 | Reset re-arms the watchdog for the next source | `acMic03_resetArmsTheNextSource` |
+
+## Guided calibration flow (spec §§9–11)
+
+The child is asked for **one key at a time**: C, D, E, F, G.
+
+| ID | Criterion | Test |
+| --- | --- | --- |
+| AC-SESS-01 | The session opens by asking for C4 | `CalibrationSessionTest.acSess01_startsByAskingForC4` |
+| AC-SESS-02 | A wrong key is rejected, does not advance, and is not banked under its own note | `acSess02_wrongKeyIsRejectedAndDoesNotAdvance` |
+| AC-SESS-03 | Low confidence or a badly off-centre pitch is `UNCLEAR`, never a sample | `acSess03_lowConfidenceIsUnclearNotAccepted`, `acSess03b_badlyOutOfTunePitchIsUnclearEvenWhenConfident` |
+| AC-SESS-04 | Advances to the next key only after enough clean samples | `acSess04_advancesOnlyAfterEnoughCleanSamples` |
+| AC-SESS-05 | A full C–G run completes and scores `EXCELLENT`, medians on concert pitch | `acSess05_fullRunCompletesAndScoresExcellent` |
+| AC-SESS-06 | A skipped key can **never** yield `EXCELLENT` | `acSess06_skippedNoteCannotProduceAnExcellentProfile` |
+| AC-SESS-08 | Wrong keys do not move the progress bar | `acSess08_progressTracksAcceptedSamplesOnly` |
+
+## Calibration scoring (spec §§8–11)
 
 MVP notes: **C4 D4 E4 F4 G4** (MIDI 60, 62, 64, 65, 67). Samples more than **40 cents** from the expected frequency are dropped (wrong key during capture). The stored value is the **median**, not the first sample.
 
@@ -72,4 +102,4 @@ MVP notes: **C4 D4 E4 F4 G4** (MIDI 60, 62, 64, 65, 67). Samples more than **40 
 
 ## Tier 2 — not claimed by these tests
 
-On-device `AudioRecord` source, real sample-rate, PSR-F52 latency, and live onset/release (spec §41) need a physical device. This environment has no Android SDK / phone. Do **not** add empty `androidTest` methods that always pass.
+Real `AudioRecord` behaviour per device, true sample-rate, PSR-F52 latency, and live onset/release (spec §41) need a physical phone next to a real piano. An emulator can prove the app launches, asks for the right key, and keeps logging frames — it cannot prove recognition accuracy, because its microphone is not a piano. Do **not** add empty `androidTest` methods that always pass.

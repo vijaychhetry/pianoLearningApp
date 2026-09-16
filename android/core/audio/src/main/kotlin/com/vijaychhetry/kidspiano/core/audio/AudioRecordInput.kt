@@ -12,8 +12,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlin.concurrent.thread
 
 /**
- * Captures PCM from the device mic. Tries UNPROCESSED, then VOICE_RECOGNITION, then MIC.
- * Bounded SharedFlow drops oldest frames under backpressure (spec §3).
+ * Captures PCM from the device mic. Tries UNPROCESSED, then VOICE_RECOGNITION,
+ * then MIC. Bounded SharedFlow drops oldest frames under backpressure (spec §3).
+ *
+ * `STATE_INITIALIZED` does not prove a source works — some phones accept
+ * UNPROCESSED and return silence — so the caller can pin a specific source and
+ * retry. See `SilenceWatchdog`.
  */
 class AudioRecordInput(
     private val requestedSampleRate: Int = 44100,
@@ -36,19 +40,26 @@ class AudioRecordInput(
 
     override fun audioFrames(): Flow<AudioFrame> = frames
 
+    override fun start() = start(null)
+
+    /** @param preferredSource pin one `MediaRecorder.AudioSource`, or null to try each in order. */
     @Synchronized
-    override fun start() {
+    fun start(preferredSource: Int?) {
         if (running) return
-        val started = openRecorder()
+        val started = openRecorder(preferredSource)
+        started.startRecording()
+        if (started.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+            started.release()
+            throw IllegalStateException("Microphone did not start (source ${sourceName(appliedSource)})")
+        }
         record = started
         running = true
         worker = thread(name = "piano-audio", isDaemon = true) {
             Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
             val shortBuf = ShortArray(frameSize)
             val floatBuf = FloatArray(frameSize)
-            val rec = record ?: return@thread
-            rec.startRecording()
             while (running) {
+                val rec = record ?: break
                 val read = rec.read(shortBuf, 0, shortBuf.size)
                 if (read <= 0) continue
                 for (i in 0 until read) {
@@ -83,12 +94,8 @@ class AudioRecordInput(
         record = null
     }
 
-    private fun openRecorder(): AudioRecord {
-        val sources = intArrayOf(
-            MediaRecorder.AudioSource.UNPROCESSED,
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
-            MediaRecorder.AudioSource.MIC,
-        )
+    private fun openRecorder(preferredSource: Int?): AudioRecord {
+        val sources = if (preferredSource != null) intArrayOf(preferredSource) else SOURCE_ORDER
         val min = AudioRecord.getMinBufferSize(
             requestedSampleRate,
             AudioFormat.CHANNEL_IN_MONO,
@@ -115,6 +122,27 @@ class AudioRecordInput(
                 lastError = e
             }
         }
-        throw IllegalStateException("Could not open AudioRecord", lastError)
+        throw IllegalStateException("Could not open the microphone", lastError)
+    }
+
+    companion object {
+        val SOURCE_ORDER = intArrayOf(
+            MediaRecorder.AudioSource.UNPROCESSED,
+            MediaRecorder.AudioSource.VOICE_RECOGNITION,
+            MediaRecorder.AudioSource.MIC,
+        )
+
+        fun sourceName(source: Int): String = when (source) {
+            MediaRecorder.AudioSource.UNPROCESSED -> "UNPROCESSED"
+            MediaRecorder.AudioSource.VOICE_RECOGNITION -> "VOICE_RECOGNITION"
+            MediaRecorder.AudioSource.MIC -> "MIC"
+            else -> "source $source"
+        }
+
+        /** The source after [source] in [SOURCE_ORDER], wrapping around. */
+        fun nextSource(source: Int): Int {
+            val i = SOURCE_ORDER.indexOf(source)
+            return SOURCE_ORDER[(if (i < 0) 0 else i + 1) % SOURCE_ORDER.size]
+        }
     }
 }

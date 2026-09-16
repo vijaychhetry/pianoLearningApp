@@ -18,7 +18,13 @@ Phase 1: **Piano Audio Lab** only — live pitch, no games.
 
 ## Download APK (no Android Studio)
 
-A debug APK is in [`releases/KidsPianoLab-debug-0.1.0.apk`](../releases/KidsPianoLab-debug-0.1.0.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+A debug APK is in [`releases/KidsPianoLab-debug-0.2.0.apk`](../releases/KidsPianoLab-debug-0.2.0.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+
+## The two screens
+
+**Calibrate** — this is the setup flow. It asks for one key at a time (C, D, E, F, G), collects several clean samples each, rejects the wrong key, and saves a profile of how *your* piano sounds in *your* room. Quality is scored Excellent / Good / Needs improvement; a skipped key can never score Excellent.
+
+**Audio Lab** — an engineering readout (spec §15). It does not teach or score. It shows mic level, frequency, MIDI, confidence, latency, the applied `AudioSource`, and a scrolling log. The log always writes the first frame and a heartbeat line, so an empty log means frames are not arriving at all — not that recognition is broken. **Change mic** cycles `UNPROCESSED → VOICE_RECOGNITION → MIC`, because some phones accept UNPROCESSED and return silence; the app also switches automatically after 1.5 s of pure silence.
 
 ## Open in Android Studio
 

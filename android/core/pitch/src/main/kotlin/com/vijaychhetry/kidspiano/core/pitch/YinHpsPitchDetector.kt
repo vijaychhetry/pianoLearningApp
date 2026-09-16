@@ -7,11 +7,15 @@ import com.vijaychhetry.kidspiano.core.notes.MAX_PIANO_MIDI
 import com.vijaychhetry.kidspiano.core.notes.MIN_PIANO_MIDI
 import com.vijaychhetry.kidspiano.core.notes.freqToMidi
 
+/**
+ * Default range covers A2–F6 so a child hunting for keys outside the five-note
+ * MVP still sees a reading instead of a dead screen.
+ */
 class YinHpsPitchDetector(
-    private val minFreq: Double = 130.0,
-    private val maxFreq: Double = 800.0,
+    private val minFreq: Double = MIN_FREQ_HZ,
+    private val maxFreq: Double = MAX_FREQ_HZ,
     private val probabilityThreshold: Double = 0.55,
-    private val minRms: Double = 0.008,
+    private val minRms: Double = MIN_RMS,
 ) : PitchDetector {
     override fun detect(frame: AudioFrame): PitchResult {
         val started = System.nanoTime()
@@ -55,4 +59,12 @@ class YinHpsPitchDetector(
     }
 
     private fun elapsedMs(started: Long): Long = (System.nanoTime() - started) / 1_000_000
+
+    companion object {
+        const val MIN_FREQ_HZ = 110.0
+        const val MAX_FREQ_HZ = 1400.0
+
+        /** Below this the frame is treated as room noise, not a key press. */
+        const val MIN_RMS = 0.005
+    }
 }

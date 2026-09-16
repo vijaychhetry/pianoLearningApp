@@ -4,29 +4,36 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlin.math.log10
 
 @Composable
 fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
@@ -47,50 +54,75 @@ fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
         model.onPermission(granted)
     }
 
-    Scaffold { padding ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text("Piano Audio Lab", style = MaterialTheme.typography.headlineSmall)
-            Text(
-                "Engineering screen (spec Phase 1). No games. Place the phone on the piano and play one key.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Text(
-                state.noteName,
-                style = MaterialTheme.typography.displayLarge,
-            )
-            val pitch = state.pitch
-            MetricRow("Frequency", pitch?.frequency?.let { "%.1f Hz".format(it) } ?: "—")
-            MetricRow("MIDI", pitch?.midiNote?.toString() ?: "—")
-            MetricRow("Confidence", pitch?.let { "${(it.confidence * 100).toInt()}%" } ?: "—")
-            MetricRow("Signal", pitch?.let { "%.4f RMS".format(it.signalStrength) } ?: "—")
-            MetricRow("Latency", pitch?.let { "${it.latencyMs} ms (compute)" } ?: "—")
-            MetricRow("Phase", state.phase.name)
-            MetricRow("Mic source", state.sourceLabel)
-            MetricRow("Sample rate", if (state.sampleRate == 0) "—" else "${state.sampleRate} Hz")
-            state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = {
-                    if (state.permissionNeeded) {
-                        launcher.launch(Manifest.permission.RECORD_AUDIO)
-                    } else {
-                        model.start()
-                    }
-                }) { Text(if (state.running) "Listening" else "Start mic") }
-                OutlinedButton(onClick = { model.stop() }, enabled = state.running) { Text("Stop") }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            "Engineering screen: it only shows what the microphone hears. " +
+                "It does not teach or score. Use Calibrate to set the piano up.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        Text(state.noteName, style = MaterialTheme.typography.displayMedium)
+        Text(
+            state.status.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+
+        LevelMeter(state.level, state.peakLevel)
+
+        state.error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        Text(state.hint, style = MaterialTheme.typography.bodyMedium)
+
+        val pitch = state.pitch
+        MetricRow("Frequency", pitch?.frequency?.let { "%.1f Hz".format(it) } ?: "—")
+        MetricRow("MIDI", pitch?.midiNote?.toString() ?: "—")
+        MetricRow("Confidence", pitch?.let { "${(it.confidence * 100).toInt()}%" } ?: "—")
+        MetricRow("Mic level", "%.4f RMS".format(state.level))
+        MetricRow("Latency", pitch?.let { "${it.latencyMs} ms (compute)" } ?: "—")
+        MetricRow("Phase", state.phase.name)
+        MetricRow("Mic source", state.sourceLabel)
+        MetricRow("Sample rate", if (state.sampleRate == 0) "—" else "${state.sampleRate} Hz")
+        MetricRow("Frames", state.frameCount.toString())
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                if (state.permissionNeeded) {
+                    launcher.launch(Manifest.permission.RECORD_AUDIO)
+                } else {
+                    model.start()
+                }
+            }, enabled = !state.running) {
+                Text(if (state.running) "Listening" else "Start listening")
             }
-            Text("Event log", style = MaterialTheme.typography.titleMedium)
-            Card(Modifier.fillMaxWidth().weight(1f, fill = true)) {
+            OutlinedButton(onClick = { model.stop() }, enabled = state.running) { Text("Stop") }
+            TextButton(onClick = { model.switchSource() }) { Text("Change mic") }
+        }
+
+        Text("Event log", style = MaterialTheme.typography.titleMedium)
+        Card(Modifier.fillMaxWidth().weight(1f, fill = true)) {
+            if (state.events.isEmpty()) {
+                Text(
+                    if (state.running) {
+                        "Waiting for the first frame…"
+                    } else {
+                        "Empty until you start listening."
+                    },
+                    Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
                 LazyColumn(Modifier.padding(12.dp)) {
                     items(state.events) { event ->
-                        val midiHint = event.note
+                        val hz = event.hz?.let { "%.1f Hz".format(it) } ?: "—"
                         Text(
-                            "${event.status}  $midiHint  ${(event.confidence * 100).toInt()}%",
+                            "${event.status}  ${event.label}  $hz  ${(event.confidence * 100).toInt()}%",
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -100,10 +132,42 @@ fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
     }
 }
 
+/** Log-scaled bar so room noise and a struck key look different. */
+@Composable
+private fun LevelMeter(level: Double, peak: Double) {
+    val fraction = levelFraction(level)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(16.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fraction)
+                    .height(16.dp)
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+        }
+        Text(
+            "peak %.4f".format(peak),
+            style = MaterialTheme.typography.labelSmall,
+        )
+    }
+}
+
+internal fun levelFraction(rms: Double): Float {
+    if (rms <= 0.00001) return 0f
+    val db = 20.0 * log10(rms)
+    return ((db + 60.0) / 60.0).coerceIn(0.0, 1.0).toFloat()
+}
+
 @Composable
 private fun MetricRow(label: String, value: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
     }
 }

@@ -38,7 +38,7 @@ class YinHpsPitchDetectorTest {
         assertNull(result.midiNote)
         assertNull(result.frequency)
         assertEquals(0.0, result.confidence, 0.0)
-        assertTrue(result.signalStrength < 0.008)
+        assertTrue(result.signalStrength < YinHpsPitchDetector.MIN_RMS)
         assertFalse(result.ambiguous)
     }
 
@@ -46,7 +46,7 @@ class YinHpsPitchDetectorTest {
     fun acPitch02b_belowRmsGateIsNoPitchEvenIfSineIsPresent() {
         val quiet = sineTone(midiToFreq(60), SR, 0.6, amplitude = 0.001f)
         val result = detector.detect(slice(quiet))
-        assertTrue(rms(quiet.copyOfRange(2000, 4048)) < 0.008)
+        assertTrue(rms(quiet.copyOfRange(2000, 4048)) < YinHpsPitchDetector.MIN_RMS)
         assertNull(result.midiNote)
         assertEquals(0.0, result.confidence, 0.0)
     }
@@ -76,6 +76,25 @@ class YinHpsPitchDetectorTest {
         val result = detector.detect(pianoFrame(midiToFreq(60)))
         assertFalse(result.ambiguous, "harmonics of one note are not polyphony")
         assertEquals(60, result.midiNote)
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [60, 62, 64, 65, 67])
+    fun acPitch05b_realPianoPartialsAndRoomNoiseAreNotAmbiguous(midi: Int) {
+        val result = detector.detect(slice(realisticPianoTone(midiToFreq(midi), SR, 0.6)))
+        assertFalse(
+            result.ambiguous,
+            "MIDI $midi: inharmonic partials plus hum must not read as two notes",
+        )
+        assertEquals(midi, result.midiNote)
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [45, 50, 55, 72, 79])
+    fun acPitch07_keysOutsideTheFiveNoteMvpStillReadOut(midi: Int) {
+        val result = detector.detect(pianoFrame(midiToFreq(midi)))
+        assertEquals(midi, result.midiNote, "a child exploring the keyboard must still see a note")
+        assertTrue(result.confidence > 0.6)
     }
 
     @Test
