@@ -90,11 +90,21 @@ class YinHpsPitchDetectorTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = [45, 50, 55, 72, 79])
-    fun acPitch07_keysOutsideTheFiveNoteMvpStillReadOut(midi: Int) {
+    @ValueSource(ints = [45, 50, 55, 72, 79, 84])
+    fun acPitch07_everyKeyFromA2ToC6ReadsOut(midi: Int) {
         val result = detector.detect(pianoFrame(midiToFreq(midi)))
         assertEquals(midi, result.midiNote, "a child exploring the keyboard must still see a note")
         assertTrue(result.confidence > 0.6)
+    }
+
+    @Test
+    fun acPitch07b_theTopOfTheRangeIsWiderThanTheOldEightHundredHertzCeiling() {
+        val c6 = midiToFreq(84)
+        assertTrue(c6 > 800.0, "C6 is ${"%.1f".format(c6)} Hz and must be inside the range")
+        assertTrue(YinHpsPitchDetector.MAX_FREQ_HZ > c6)
+        val result = detector.detect(pianoFrame(c6))
+        assertEquals(84, result.midiNote)
+        assertTrue(abs(result.frequency!! - c6) < 6.0)
     }
 
     @Test
@@ -108,6 +118,26 @@ class YinHpsPitchDetectorTest {
 }
 
 class NoteDebouncerTest {
+    @Test
+    fun acDeb00_defaultConfigNeedsThreeAgreeingFramesBecauseProductionUsesTheDefault() {
+        val d = NoteDebouncer()
+        assertEquals(NotePhase.ATTACK, d.onFrame(60))
+        assertEquals(NotePhase.ATTACK, d.onFrame(60), "two frames must not be a press")
+        assertNull(d.lockedMidi)
+        assertEquals(NotePhase.STABLE, d.onFrame(60))
+        assertEquals(60, d.lockedMidi)
+    }
+
+    @Test
+    fun acDeb04_resetDropsAPressInFlight() {
+        val d = NoteDebouncer()
+        repeat(3) { d.onFrame(60) }
+        assertEquals(60, d.lockedMidi)
+        d.reset()
+        assertNull(d.lockedMidi)
+        assertEquals(NotePhase.ATTACK, d.onFrame(60), "after a reset the next note starts over")
+    }
+
     @Test
     fun acDeb01_doesNotLockUntilStableFrames() {
         val d = NoteDebouncer(DebounceConfig(stableFrames = 3, releaseFrames = 2))

@@ -63,6 +63,18 @@ class LabEventLogTest {
     }
 
     @Test
+    fun acLog07_defaultHeartbeatIsTwoSecondsBecauseProductionUsesTheDefault() {
+        val log = LabEventLog()
+        log.onFrame(RecognitionStatus.NO_SIGNAL, "—", 0.0, null, 0)
+        assertFalse(log.onFrame(RecognitionStatus.NO_SIGNAL, "—", 0.0, null, 1_999))
+        assertTrue(
+            log.onFrame(RecognitionStatus.NO_SIGNAL, "—", 0.0, null, 2_000),
+            "a default-constructed log must prove liveness within two seconds",
+        )
+        assertEquals(2, log.entries.size)
+    }
+
+    @Test
     fun acLog06_capacityKeepsNewestLines() {
         val log = LabEventLog(capacity = 3)
         val notes = listOf("C4", "D4", "E4", "F4", "G4")
@@ -94,6 +106,17 @@ class SilenceWatchdogTest {
         dog.onFrame(0.02, 200)
         assertFalse(dog.onFrame(0.0, 5_000))
         assertFalse(dog.onFrame(0.0, 9_000))
+    }
+
+    @Test
+    fun acMic04_defaultWindowFiresWithinTwoSecondsBecauseProductionUsesTheDefault() {
+        val dog = SilenceWatchdog()
+        assertFalse(dog.onFrame(0.0, 0))
+        assertFalse(dog.onFrame(0.0, 1_499))
+        assertTrue(
+            dog.onFrame(0.0, 1_500),
+            "a default-constructed watchdog must notice a silent source quickly",
+        )
     }
 
     @Test

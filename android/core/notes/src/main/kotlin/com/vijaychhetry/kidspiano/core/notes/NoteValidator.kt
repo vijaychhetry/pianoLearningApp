@@ -12,13 +12,9 @@ interface NoteValidator {
 /**
  * Beginner policy (spec §5, §44): same letter in another octave is a soft match.
  * Low confidence and between-note pitches must never become INCORRECT or CORRECT.
- *
- * @param unclearBelow kept as the documented low-confidence floor (spec LOW_CONFIDENCE).
- * Anything below [highConfidence] retries; this floor is the value tests pin as "never wrong".
  */
 class DefaultNoteValidator(
     private val highConfidence: Double = 0.7,
-    private val unclearBelow: Double = 0.55,
     private val maxCentsFromNamedNote: Double = 40.0,
 ) : NoteValidator {
     override fun validate(expected: Int, detected: RecognizedNote?): ValidationResult {
@@ -36,7 +32,6 @@ class DefaultNoteValidator(
             return retry(RecognitionStatus.AMBIGUOUS, expected, detected)
         }
         if (detected.confidence < highConfidence) {
-            check(unclearBelow <= highConfidence)
             return retry(RecognitionStatus.UNCLEAR, expected, detected)
         }
         if (detected.midi == expected) {
