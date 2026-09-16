@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vijaychhetry.kidspiano.lab.levelFraction
+import com.vijaychhetry.kidspiano.core.pitch.levelFraction
 
 @Composable
 fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
@@ -45,8 +45,10 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
     ) { granted -> if (granted) model.start() }
 
     LaunchedEffect(Unit) { model.setSavedSummary(store.summary()) }
-    LaunchedEffect(state.profile) {
-        state.profile?.let {
+    // Only a profile the engine cleared, or one the user explicitly kept,
+    // is allowed to become the stored default (spec §11).
+    LaunchedEffect(state.profileToSave) {
+        state.profileToSave?.let {
             store.save(it)
             model.setSavedSummary(store.summary())
         }
@@ -138,9 +140,21 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
                 TextButton(onClick = { model.restart() }) { Text("Redo") }
             }
         }
-        if (state.running) {
-            TextButton(onClick = { model.switchSource() }) { Text("Change mic") }
+        if (state.needsConfirmation) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedButton(onClick = { model.acceptProfileAnyway() }) { Text("Use anyway") }
+                Text(
+                    "Redo is better: a weak profile makes the app guess.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
         }
+        // Also offered while stopped: a pinned source that fails to start
+        // would otherwise leave no way out of the loop.
+        TextButton(onClick = { model.switchSource() }) { Text("Change mic") }
     }
 }
 

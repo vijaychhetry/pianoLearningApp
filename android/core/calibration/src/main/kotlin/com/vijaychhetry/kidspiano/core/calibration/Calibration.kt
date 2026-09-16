@@ -25,6 +25,13 @@ data class CalibrationProfile(
     val calibrationQuality: Quality,
 ) {
     enum class Quality { EXCELLENT, GOOD, NEEDS_IMPROVEMENT }
+
+    /**
+     * Spec §11: a poor profile must not silently become the production
+     * default. The app may still store one the user explicitly accepts.
+     */
+    val usableAsDefault: Boolean
+        get() = calibrationQuality != Quality.NEEDS_IMPROVEMENT
 }
 
 interface CalibrationEngine {
@@ -43,8 +50,8 @@ interface CalibrationEngine {
 class MedianCalibrationEngine(
     private val requiredMidi: List<Int> = MVP_CALIBRATION_MIDI,
     private val maxCentsFromExpected: Double = 40.0,
-    private val minSamples: Int = 6,
-    private val excellentSamples: Int = 8,
+    private val minSamples: Int = 3,
+    private val excellentSamples: Int = 4,
     private val excellentSpreadHz: Double = 3.0,
     private val goodSpreadHz: Double = 10.0,
 ) : CalibrationEngine {

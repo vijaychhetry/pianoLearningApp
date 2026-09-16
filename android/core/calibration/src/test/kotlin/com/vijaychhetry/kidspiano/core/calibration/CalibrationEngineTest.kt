@@ -2,6 +2,7 @@ package com.vijaychhetry.kidspiano.core.calibration
 
 import com.vijaychhetry.kidspiano.core.notes.midiToFreq
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -49,7 +50,7 @@ class CalibrationEngineTest {
         val clusterHz = 262.20
         val captures = listOf(261.0, 400.0) + List(10) { clusterHz }
         val profile = engine.buildProfile(
-            mapOf(60 to captures) + completeExcept(60, clusterHz),
+            mapOf(60 to captures) + completeExcept(60),
             44100,
             "UNPROCESSED",
         )
@@ -101,6 +102,53 @@ class CalibrationEngineTest {
     }
 
     @Test
+    fun acCal06_goodIsReachableAndIsNotExcellent() {
+        val samples = MVP_CALIBRATION_MIDI.associateWith { cluster(it, count = 3, jitterHz = 2.0) }
+        val profile = engine.buildProfile(samples, 44100, "MIC")
+        assertEquals(
+            CalibrationProfile.Quality.GOOD,
+            profile.calibrationQuality,
+            "all five notes present and inside the good spread, but too few presses for excellent",
+        )
+        for (note in profile.notes) {
+            assertEquals(3, note.sampleCount)
+            assertTrue(note.frequencySpread < 10.0, "midi ${note.midiNote} spread=${note.frequencySpread}")
+        }
+    }
+
+    @Test
+    fun acCal07_twoPressesPerNoteIsNeverGoodEnough() {
+        val samples = MVP_CALIBRATION_MIDI.associateWith { cluster(it, count = 2, jitterHz = 0.05) }
+        val profile = engine.buildProfile(samples, 44100, "MIC")
+        assertEquals(
+            CalibrationProfile.Quality.NEEDS_IMPROVEMENT,
+            profile.calibrationQuality,
+            "two samples cannot describe how a note varies, however tight they look",
+        )
+    }
+
+    @Test
+    fun acCal08_onlyExcellentOrGoodMayBecomeTheDefault() {
+        val excellent = engine.buildProfile(
+            MVP_CALIBRATION_MIDI.associateWith { cluster(it, count = 12, jitterHz = 0.08) },
+            44100,
+            "MIC",
+        )
+        val good = engine.buildProfile(
+            MVP_CALIBRATION_MIDI.associateWith { cluster(it, count = 3, jitterHz = 2.0) },
+            44100,
+            "MIC",
+        )
+        val poor = engine.buildProfile(mapOf(60 to cluster(60)), 44100, "MIC")
+        assertEquals(CalibrationProfile.Quality.EXCELLENT, excellent.calibrationQuality)
+        assertEquals(CalibrationProfile.Quality.GOOD, good.calibrationQuality)
+        assertEquals(CalibrationProfile.Quality.NEEDS_IMPROVEMENT, poor.calibrationQuality)
+        assertTrue(excellent.usableAsDefault)
+        assertTrue(good.usableAsDefault)
+        assertFalse(poor.usableAsDefault, "spec §11: a poor profile must not silently become the default")
+    }
+
+    @Test
     fun percentileInterpolatesMedian() {
         assertEquals(3.0, percentile(listOf(1.0, 2.0, 3.0, 4.0, 5.0), 50.0), 1e-9)
         assertEquals(2.5, percentile(listOf(1.0, 2.0, 3.0, 4.0), 50.0), 1e-9)
@@ -113,8 +161,6 @@ class CalibrationEngineTest {
     }
 
     /** Other MVP notes as tight clusters so only the overridden midi is under test. */
-    private fun completeExcept(midi: Int, unused: Double): Map<Int, List<Double>> {
-        check(unused.isFinite())
-        return MVP_CALIBRATION_MIDI.filter { it != midi }.associateWith { cluster(it) }
-    }
+    private fun completeExcept(midi: Int): Map<Int, List<Double>> =
+        MVP_CALIBRATION_MIDI.filter { it != midi }.associateWith { cluster(it) }
 }

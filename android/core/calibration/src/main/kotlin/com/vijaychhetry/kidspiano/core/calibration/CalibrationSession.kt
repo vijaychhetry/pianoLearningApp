@@ -7,17 +7,24 @@ import kotlin.math.abs
  * Guided calibration capture (spec §§9–11): ask for one known key at a time,
  * collect several clean samples, reject anything that is not the key we asked
  * for, then hand the samples to a [CalibrationEngine].
+ *
+ * One sample means one key press. Frames arrive about every 46 ms, so taking a
+ * sample per frame would fill the profile from a single sustained note and
+ * measure the detector's own jitter rather than the piano's spread. The caller
+ * must report the key being released via [onRelease] before the next sample of
+ * the same note is accepted.
  */
 class CalibrationSession(
     val notes: List<Int> = MVP_CALIBRATION_MIDI,
-    private val samplesPerNote: Int = 8,
+    val samplesPerNote: Int = 4,
     private val maxCentsFromExpected: Double = 45.0,
     private val minConfidence: Double = 0.6,
 ) {
-    enum class Offer { ACCEPTED, WRONG_KEY, UNCLEAR, DONE }
+    enum class Offer { ACCEPTED, WRONG_KEY, UNCLEAR, SAME_PRESS, DONE }
 
     private val accepted = LinkedHashMap<Int, MutableList<Double>>()
     private var index = 0
+    private var sampledThisPress = false
 
     /** The key the child is being asked to play, or null when finished. */
     val currentMidi: Int? get() = notes.getOrNull(index)
@@ -41,20 +48,32 @@ class CalibrationSession(
         if (midi == null || frequency == null || confidence < minConfidence) return Offer.UNCLEAR
         if (midi != target) return Offer.WRONG_KEY
         if (abs(centsOff(frequency, target)) > maxCentsFromExpected) return Offer.UNCLEAR
+        if (sampledThisPress) return Offer.SAME_PRESS
         val bucket = accepted.getOrPut(target) { mutableListOf() }
         bucket += frequency
-        if (bucket.size >= samplesPerNote) index++
+        sampledThisPress = true
+        if (bucket.size >= samplesPerNote) {
+            index++
+            sampledThisPress = false
+        }
         return Offer.ACCEPTED
+    }
+
+    /** The key was let go, so the next offer starts a new press. */
+    fun onRelease() {
+        sampledThisPress = false
     }
 
     /** Move on without samples; the profile will score the gap honestly. */
     fun skipCurrent() {
         if (!isComplete) index++
+        sampledThisPress = false
     }
 
     fun restart() {
         accepted.clear()
         index = 0
+        sampledThisPress = false
     }
 
     fun samplesByMidi(): Map<Int, List<Double>> = accepted.mapValues { it.value.toList() }

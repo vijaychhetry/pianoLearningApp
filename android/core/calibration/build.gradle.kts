@@ -18,6 +18,7 @@ tasks.test {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:notes"))
+    implementation(project(":core:pitch"))
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.kotlin.test.junit5)

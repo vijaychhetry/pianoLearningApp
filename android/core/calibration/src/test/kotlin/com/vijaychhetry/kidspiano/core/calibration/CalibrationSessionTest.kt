@@ -48,12 +48,12 @@ class CalibrationSessionTest {
     }
 
     @Test
-    fun acSess04_advancesOnlyAfterEnoughCleanSamples() {
+    fun acSess04_advancesOnlyAfterEnoughCleanPresses() {
         val session = CalibrationSession(samplesPerNote = 3)
-        repeat(2) { session.offer(60, midiToFreq(60), 0.9) }
+        repeat(2) { session.press(60, midiToFreq(60)) }
         assertEquals(60, session.currentMidi, "still collecting C4")
         assertEquals(1, session.samplesNeeded(60))
-        session.offer(60, midiToFreq(60), 0.9)
+        session.press(60, midiToFreq(60))
         assertEquals(62, session.currentMidi, "moves on to D4")
         assertEquals(3, session.acceptedCount(60))
     }
@@ -64,11 +64,11 @@ class CalibrationSessionTest {
         while (!session.isComplete) {
             val midi = session.currentMidi!!
             val hz = midiToFreq(midi) + (session.acceptedCount(midi) % 3) * 0.1
-            assertEquals(CalibrationSession.Offer.ACCEPTED, session.offer(midi, hz, 0.9))
+            assertEquals(CalibrationSession.Offer.ACCEPTED, session.press(midi, hz))
         }
         assertNull(session.currentMidi)
         assertEquals(1f, session.progress)
-        assertEquals(CalibrationSession.Offer.DONE, session.offer(60, midiToFreq(60), 0.9))
+        assertEquals(CalibrationSession.Offer.DONE, session.press(60, midiToFreq(60)))
 
         val profile = session.buildProfile(MedianCalibrationEngine(), 44100, "VOICE_RECOGNITION")
         assertEquals(CalibrationProfile.Quality.EXCELLENT, profile.calibrationQuality)
@@ -84,7 +84,7 @@ class CalibrationSessionTest {
         session.skipCurrent()
         while (!session.isComplete) {
             val midi = session.currentMidi!!
-            session.offer(midi, midiToFreq(midi), 0.9)
+            session.press(midi, midiToFreq(midi))
         }
         val profile = session.buildProfile(MedianCalibrationEngine(), 44100, "MIC")
         assertNotEquals(CalibrationProfile.Quality.EXCELLENT, profile.calibrationQuality)
@@ -95,8 +95,8 @@ class CalibrationSessionTest {
     @Test
     fun acSess07_restartClearsEverything() {
         val session = CalibrationSession(samplesPerNote = 2)
-        session.offer(60, midiToFreq(60), 0.9)
-        session.offer(60, midiToFreq(60), 0.9)
+        session.press(60, midiToFreq(60))
+        session.press(60, midiToFreq(60))
         assertEquals(62, session.currentMidi)
         session.restart()
         assertEquals(60, session.currentMidi)
@@ -107,9 +107,56 @@ class CalibrationSessionTest {
     @Test
     fun acSess08_progressTracksAcceptedSamplesOnly() {
         val session = CalibrationSession(samplesPerNote = 4)
-        session.offer(64, midiToFreq(64), 0.95)
+        session.press(64, midiToFreq(64), 0.95)
         assertEquals(0f, session.progress, "wrong keys must not move the bar")
-        session.offer(60, midiToFreq(60), 0.9)
+        session.press(60, midiToFreq(60))
         assertEquals(1f / 20f, session.progress, 1e-6f)
     }
+
+    @Test
+    fun acSess09_oneHeldKeyContributesExactlyOneSample() {
+        val session = CalibrationSession(samplesPerNote = 4)
+        assertEquals(CalibrationSession.Offer.ACCEPTED, session.offer(60, midiToFreq(60), 0.9))
+        // Frames keep arriving ~46 ms apart while the key is still down.
+        repeat(30) {
+            assertEquals(
+                CalibrationSession.Offer.SAME_PRESS,
+                session.offer(60, midiToFreq(60), 0.9),
+                "one sustained note must not fill the whole profile",
+            )
+        }
+        assertEquals(1, session.acceptedCount(60))
+        assertEquals(60, session.currentMidi, "holding one key cannot finish C4")
+        session.onRelease()
+        assertEquals(CalibrationSession.Offer.ACCEPTED, session.offer(60, midiToFreq(60), 0.9))
+        assertEquals(2, session.acceptedCount(60))
+    }
+
+    @Test
+    fun acSess10_defaultAsksForFourPressesPerNote() {
+        val session = CalibrationSession()
+        assertEquals(4, session.samplesPerNote)
+        repeat(3) { session.press(60, midiToFreq(60)) }
+        assertEquals(60, session.currentMidi, "three presses is not a note's worth of samples")
+        session.press(60, midiToFreq(60))
+        assertEquals(62, session.currentMidi)
+    }
+
+    @Test
+    fun acSess11_wrongKeyDuringAPressDoesNotConsumeThePress() {
+        val session = CalibrationSession(samplesPerNote = 2)
+        assertEquals(CalibrationSession.Offer.WRONG_KEY, session.offer(62, midiToFreq(62), 0.9))
+        assertEquals(CalibrationSession.Offer.ACCEPTED, session.offer(60, midiToFreq(60), 0.9))
+        assertEquals(1, session.acceptedCount(60))
+    }
+}
+
+/** One press: the key was up, then struck. */
+private fun CalibrationSession.press(
+    midi: Int?,
+    hz: Double?,
+    confidence: Double = 0.9,
+): CalibrationSession.Offer {
+    onRelease()
+    return offer(midi, hz, confidence)
 }
