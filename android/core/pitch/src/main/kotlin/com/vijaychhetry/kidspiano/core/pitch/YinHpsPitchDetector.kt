@@ -8,8 +8,8 @@ import com.vijaychhetry.kidspiano.core.notes.MIN_PIANO_MIDI
 import com.vijaychhetry.kidspiano.core.notes.freqToMidi
 
 /**
- * Default range covers A2–F6 so a child hunting for keys outside the five-note
- * MVP still sees a reading instead of a dead screen.
+ * Configured range is A2–F6 (110–1400 Hz), tested to C6, so a child hunting
+ * for keys outside the five-note MVP sees a reading instead of a dead screen.
  */
 class YinHpsPitchDetector(
     private val minFreq: Double = MIN_FREQ_HZ,
