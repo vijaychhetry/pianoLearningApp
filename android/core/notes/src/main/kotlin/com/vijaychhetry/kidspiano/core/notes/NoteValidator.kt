@@ -16,6 +16,7 @@ interface NoteValidator {
 class DefaultNoteValidator(
     private val highConfidence: Double = 0.7,
     private val maxCentsFromNamedNote: Double = 40.0,
+    private val a4Hz: Double = A4_HZ,
 ) : NoteValidator {
     override fun validate(expected: Int, detected: RecognizedNote?): ValidationResult {
         if (detected == null) {
@@ -27,7 +28,7 @@ class DefaultNoteValidator(
                 message = "I couldn't hear that clearly. Try again.",
             )
         }
-        val centsFromNamed = abs(centsOff(detected.frequency, detected.midi))
+        val centsFromNamed = abs(centsOff(detected.frequency, detected.midi, a4Hz))
         if (centsFromNamed > maxCentsFromNamedNote) {
             return retry(RecognitionStatus.AMBIGUOUS, expected, detected)
         }

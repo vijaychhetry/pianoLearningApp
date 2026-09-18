@@ -1,7 +1,9 @@
 package com.vijaychhetry.kidspiano.core.calibration
 
+import com.vijaychhetry.kidspiano.core.notes.A4_HZ
 import com.vijaychhetry.kidspiano.core.notes.centsOff
 import com.vijaychhetry.kidspiano.core.notes.midiToFreq
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -116,6 +118,71 @@ class MedianCalibrationEngine(
 
 /** Level-1 five white keys: C4 D4 E4 F4 G4. */
 val MVP_CALIBRATION_MIDI: List<Int> = listOf(60, 62, 64, 65, 67)
+
+/**
+ * Geometric-mean ratio of observed / expected frequencies, applied to A440.
+ * Live recognition uses this A4 so a piano that is tens of cents off concert
+ * pitch is still named as the key the child pressed.
+ */
+fun concertA4Hz(profile: CalibrationProfile): Double {
+    val usable = profile.notes.filter {
+        it.expectedFrequency > 0.0 && it.observedMedianFrequency > 0.0
+    }
+    if (usable.isEmpty()) return A4_HZ
+    val logMean = usable.sumOf {
+        Math.log(it.observedMedianFrequency / it.expectedFrequency)
+    } / usable.size
+    return A4_HZ * Math.exp(logMean)
+}
+
+/**
+ * Rebuild a profile from the compact string [CalibrationStore] persists.
+ * Spread is not stored; quality already decided whether it may be the default.
+ * Decimals are always a period so a comma locale cannot split the CSV.
+ */
+fun formatSavedNotes(notes: List<NoteCalibration>): String =
+    notes.joinToString(",") {
+        val freq = String.format(Locale.US, "%.2f", it.observedMedianFrequency)
+        "${it.midiNote}:$freq:${it.sampleCount}"
+    }
+fun parseSavedProfile(
+    quality: String,
+    notesCsv: String,
+    source: String,
+    sampleRate: Int,
+    savedAt: Long,
+): CalibrationProfile? {
+    val parsedQuality = try {
+        CalibrationProfile.Quality.valueOf(quality)
+    } catch (_: IllegalArgumentException) {
+        return null
+    }
+    if (notesCsv.isBlank()) return null
+    val notes = notesCsv.split(',').mapNotNull { token ->
+        val parts = token.split(':')
+        if (parts.size < 2) return@mapNotNull null
+        val midi = parts[0].toIntOrNull() ?: return@mapNotNull null
+        val freq = parts[1].toDoubleOrNull() ?: return@mapNotNull null
+        val count = parts.getOrNull(2)?.toIntOrNull() ?: 0
+        NoteCalibration(
+            midiNote = midi,
+            expectedFrequency = midiToFreq(midi),
+            observedMedianFrequency = freq,
+            frequencySpread = 0.0,
+            confidence = if (count >= 4) 0.95 else 0.6,
+            sampleCount = count,
+        )
+    }
+    if (notes.isEmpty()) return null
+    return CalibrationProfile(
+        id = "local",
+        createdAtEpochMs = savedAt,
+        sampleRate = sampleRate,
+        microphoneSource = source,
+        notes = notes,
+        calibrationQuality = parsedQuality,
+    )
+}
 
 internal fun percentile(sorted: List<Double>, p: Double): Double {
     if (sorted.isEmpty()) return 0.0

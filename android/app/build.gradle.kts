@@ -11,8 +11,8 @@ android {
         applicationId = "com.vijaychhetry.kidspiano"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0-lab"
+        versionCode = 4
+        versionName = "0.4.0"
     }
     buildTypes {
         release {
@@ -33,6 +33,7 @@ dependencies {
     implementation(project(":core:notes"))
     implementation(project(":core:pitch"))
     implementation(project(":core:calibration"))
+    implementation(project(":core:learning"))
     implementation(project(":core:audio"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

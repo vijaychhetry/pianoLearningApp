@@ -6,7 +6,7 @@
     <application
         android:allowBackup="false"
         android:icon="@android:drawable/ic_btn_speak_now"
-        android:label="Kids Piano Lab"
+        android:label="Kids Piano"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
