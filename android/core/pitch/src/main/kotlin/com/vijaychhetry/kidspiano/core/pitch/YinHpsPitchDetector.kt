@@ -16,6 +16,7 @@ class YinHpsPitchDetector(
     private val maxFreq: Double = MAX_FREQ_HZ,
     private val probabilityThreshold: Double = 0.55,
     private val minRms: Double = MIN_RMS,
+    private val a4Hz: Double = A4_HZ,
 ) : PitchDetector {
     override fun detect(frame: AudioFrame): PitchResult {
         val started = System.nanoTime()
@@ -41,7 +42,7 @@ class YinHpsPitchDetector(
         } else {
             null
         }
-        val midi = if (freq != null) freqToMidi(freq, A4_HZ) else null
+        val midi = if (freq != null) freqToMidi(freq, a4Hz) else null
         val inRange = midi != null && midi in MIN_PIANO_MIDI..MAX_PIANO_MIDI
         return PitchResult(
             frequency = if (inRange) freq else null,

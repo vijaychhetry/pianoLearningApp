@@ -155,6 +155,36 @@ MVP notes: **C4 D4 E4 F4 G4** (MIDI 60, 62, 64, 65, 67). Samples more than **40 
 
 Measured against simulated press-to-press variation, the bands discriminate: within ±5 cents scores `EXCELLENT`, ±10–20 cents scores `GOOD`, and ±25 cents or worse scores `NEEDS_IMPROVEMENT` and is refused as a default.
 
+## Calibration applied to recognition (spec §8, §11)
+
+The saved profile is not a badge. The five medians become a concert-A4 offset that both the detector and the validator use.
+
+| ID | Criterion | Test |
+| --- | --- | --- |
+| AC-TUNE-01 | Empty profile stays at A440 | `CalibrationTuningTest.acTune01_emptyProfileStaysAtConcertA440` |
+| AC-TUNE-02 | A piano 20 cents sharp moves A4 by 20 cents, and C4 sits on that A4 | `acTune02_aPianoTwentyCentsSharpMovesA4ByTwentyCents` |
+| AC-TUNE-03 | The compact saved-notes string rebuilds a usable profile | `acTune03_parseSavedNotesRebuildsAUsableProfile` |
+| AC-TUNE-04 | Garbage saved notes are refused | `acTune04_garbageSavedNotesAreRefused` |
+| AC-VAL-07 | 45 cents sharp is `AMBIGUOUS` at concert A4 and `CORRECT` once A4 is taken from calibration | `NoteValidatorTest.acVal07_aSharpPianoIsCorrectOnceA4IsTakenFromCalibration` |
+
+## Level 1 — Find this key (spec §19)
+
+`LessonSession` is the child lesson, driven by the same synthesised piano audio as calibration. Practice requires a `GOOD`/`EXCELLENT` profile. Unclear audio is never wrong.
+
+| ID | Criterion | Test |
+| --- | --- | --- |
+| AC-LEARN-01 | Opens by asking for C | `LessonSessionTest.acLearn01_startsByAskingForC` |
+| AC-LEARN-02 | E when C is asked does not advance; copy is “Try C” | `acLearn02_wrongKeySaysTryCAndDoesNotAdvance` |
+| AC-LEARN-03 | A correct C moves to D, and the held C is not scored as a wrong D | `acLearn03_aCorrectCAdvancesToDAndDoesNotScoreTheHeldNoteAsWrongD` |
+| AC-LEARN-04 | Silence never marks incorrect or advances | `acLearn04_unclearNeverMarksIncorrectOrAdvances` |
+| AC-LEARN-05 | Two notes at once are `AMBIGUOUS`, never wrong | `acLearn05_twoNotesAtOnceAreUnclearNotWrong` |
+| AC-LEARN-06 | C5 when C4 is asked is octave-mismatch, not advance | `acLearn06_octaveMismatchDoesNotAdvance` |
+| AC-LEARN-07 | C–G in order completes the lesson | `acLearn07_allFiveKeysCompleteTheLesson` |
+| AC-LEARN-08 | Play again asks for C | `acLearn08_playAgainAsksForCOnceMore` |
+| AC-LEARN-09 | Practice requires a usable saved profile | `LessonPolicyTest.acLearn09_practiceRequiresAUsableSavedProfile` |
+| AC-LEARN-10 | `NEEDS_IMPROVEMENT` is blocked even if notes exist | `acLearn10_needsImprovementProfileIsBlockedEvenIfNotesExist` |
+| AC-GATE-01 | Grown-ups only open on the correct sum | `ParentGateTest.acGate01_onlyTheSumOpensGrownUps` |
+
 ## Pipeline (spec §5 “never convert uncertainty into a wrong answer”)
 
 | ID | Criterion | Test |

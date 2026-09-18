@@ -84,6 +84,23 @@ class NoteValidatorTest {
         assertEquals(0.0, result.confidence, 0.0)
     }
 
+    @Test
+    fun acVal07_aSharpPianoIsCorrectOnceA4IsTakenFromCalibration() {
+        val cents = 45.0
+        val ratio = Math.pow(2.0, cents / 1200.0)
+        val observed = midiToFreq(60) * ratio
+        val concert = validator.validate(60, note(freqToMidi(observed), observed, 0.95))
+        assertEquals(
+            RecognitionStatus.AMBIGUOUS,
+            concert.status,
+            "without the profile this sits too far from concert C to score",
+        )
+        val tuned = DefaultNoteValidator(a4Hz = A4_HZ * ratio)
+            .validate(60, note(freqToMidi(observed, A4_HZ * ratio), observed, 0.95))
+        assertEquals(RecognitionStatus.CORRECT, tuned.status)
+        assertNotEquals(RecognitionStatus.AMBIGUOUS, tuned.status)
+    }
+
     private fun note(midi: Int, freq: Double, confidence: Double) =
         RecognizedNote(midi, midiToNoteName(midi), freq, confidence)
 }
