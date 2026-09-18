@@ -25,6 +25,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -33,12 +34,16 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vijaychhetry.kidspiano.calibration.CalibrationStore
+import com.vijaychhetry.kidspiano.core.calibration.concertA4Hz
+import com.vijaychhetry.kidspiano.core.notes.A4_HZ
 import com.vijaychhetry.kidspiano.core.pitch.levelFraction
 
 @Composable
 fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val store = remember { CalibrationStore(context) }
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
@@ -47,6 +52,8 @@ fun AudioLabScreen(model: AudioLabViewModel = viewModel()) {
     }
 
     LaunchedEffect(Unit) {
+        val profile = store.load()
+        model.retune(profile?.let { concertA4Hz(it) } ?: A4_HZ)
         val granted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.RECORD_AUDIO,

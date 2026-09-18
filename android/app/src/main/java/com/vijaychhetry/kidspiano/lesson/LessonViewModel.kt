@@ -92,12 +92,17 @@ class LessonViewModel : ViewModel() {
     }
 
     fun playAgain() {
-        wantRunning = false
         viewModelScope.launch {
             control.withLock {
-                stopTicker()
-                endCapture()
-                session?.restart()?.let { publish(it, running = false) }
+                session?.restart()
+                if (wantRunning) {
+                    session?.snapshot()?.let { publish(it, running = true) }
+                } else {
+                    wantRunning = true
+                    sources.reset()
+                    beginCapture()
+                    startTicker()
+                }
             }
         }
     }

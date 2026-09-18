@@ -60,9 +60,10 @@ class LessonSession(
     private val arrival: FrameArrivalMonitor = FrameArrivalMonitor(),
 ) {
     private var index = 0
-    private var scoredThisPress = false
+    private var judgedMidi: Int? = null
     private var lastResult: ValidationResult? = null
     private var lastPitch: PitchResult? = null
+    private var lastPhase: NotePhase = NotePhase.IDLE
     private var lastFeedback: String = "Play the C key."
 
     val expectedMidi: Int? get() = notes.getOrNull(index)
@@ -76,7 +77,8 @@ class LessonSession(
         silence.reset()
         arrival.start(atMs)
         debouncer.reset()
-        scoredThisPress = false
+        // Keep judgedMidi: a mic restart mid-hold must not turn a correct C
+        // into a wrong D.
     }
 
     fun snapshot(): LessonSnapshot = snapshotFrom(lastFeedback)
@@ -87,11 +89,13 @@ class LessonSession(
         lastPitch = pitch
         if (silence.onFrame(pitch.signalStrength, frame.capturedAtMs)) sourceLooksDead = true
         val phase = debouncer.onFrame(if (pitch.ambiguous) null else pitch.midiNote)
-        if (phase != NotePhase.STABLE) scoredThisPress = false
+        lastPhase = phase
+        if (phase == NotePhase.IDLE) judgedMidi = null
         val target = expectedMidi
+        val pressLocked = judgedMidi != null && phase != NotePhase.IDLE
         when {
             target == null -> lastFeedback = "You found all five keys!"
-            pitch.ambiguous -> {
+            pitch.ambiguous && !pressLocked -> {
                 lastResult = ValidationResult(
                     status = RecognitionStatus.AMBIGUOUS,
                     expectedNote = target,
@@ -101,8 +105,8 @@ class LessonSession(
                 )
                 lastFeedback = UNCLEAR_COPY
             }
-            phase == NotePhase.STABLE && !scoredThisPress -> {
-                scoredThisPress = true
+            phase == NotePhase.STABLE && pitch.midiNote != judgedMidi -> {
+                judgedMidi = pitch.midiNote
                 val result = validator.validate(target, recognizer.recognize(pitch))
                 lastResult = result
                 if (result.status == RecognitionStatus.CORRECT) {
@@ -136,9 +140,10 @@ class LessonSession(
 
     fun restart(): LessonSnapshot {
         index = 0
-        scoredThisPress = false
+        judgedMidi = null
         lastResult = null
         lastPitch = null
+        lastPhase = NotePhase.IDLE
         lastFeedback = "Play the C key."
         sourceLooksDead = false
         silence.reset()
@@ -150,13 +155,13 @@ class LessonSession(
         sourceLooksDead = false
         silence.reset()
         debouncer.reset()
-        scoredThisPress = false
     }
 
     private fun snapshotFrom(feedback: String): LessonSnapshot {
         val target = expectedMidi
         val cue = cueOf()
         val status = when {
+            pressIsLocked() && lastResult != null -> lastResult!!.status
             lastPitch?.ambiguous == true -> RecognitionStatus.AMBIGUOUS
             lastResult != null -> lastResult!!.status
             (lastPitch?.signalStrength ?: 0.0) < YinHpsPitchDetector.MIN_RMS ->
@@ -202,6 +207,9 @@ class LessonSession(
             else -> UNCLEAR_COPY
         }
     }
+
+    private fun pressIsLocked(): Boolean =
+        judgedMidi != null && lastPhase != NotePhase.IDLE
 
     private fun letterOf(midi: Int?): String =
         midi?.let { midiToNoteName(it).dropLast(1) } ?: "—"

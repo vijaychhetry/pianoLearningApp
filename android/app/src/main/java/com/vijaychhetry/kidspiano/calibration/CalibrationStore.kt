@@ -2,6 +2,7 @@ package com.vijaychhetry.kidspiano.calibration
 
 import android.content.Context
 import com.vijaychhetry.kidspiano.core.calibration.CalibrationProfile
+import com.vijaychhetry.kidspiano.core.calibration.formatSavedNotes
 import com.vijaychhetry.kidspiano.core.calibration.parseSavedProfile
 
 /**
@@ -18,12 +19,7 @@ class CalibrationStore(context: Context) {
             .putString(KEY_SOURCE, profile.microphoneSource)
             .putInt(KEY_SAMPLE_RATE, profile.sampleRate)
             .putLong(KEY_SAVED_AT, profile.createdAtEpochMs)
-            .putString(
-                KEY_NOTES,
-                profile.notes.joinToString(",") {
-                    "${it.midiNote}:${"%.2f".format(it.observedMedianFrequency)}:${it.sampleCount}"
-                },
-            )
+            .putString(KEY_NOTES, formatSavedNotes(profile.notes))
             .apply()
     }
 

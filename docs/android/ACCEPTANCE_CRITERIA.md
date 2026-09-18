@@ -2,13 +2,13 @@
 
 Canonical product rules: `docs/KIDS_PIANO_MASTER_SPEC.md` §§5–11, §41, §44.
 
-These IDs are **Tier 1 JVM unit tests** (113 of them). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
+These IDs are **Tier 1 JVM unit tests** (129 of them as of 0.4.0). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
 
 Run:
 
 ```bash
 cd android
-./gradlew :core:notes:test :core:pitch:test :core:calibration:test
+./gradlew :core:notes:test :core:pitch:test :core:calibration:test :core:learning:test
 ```
 
 ## How we know these tests have teeth
@@ -165,6 +165,7 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-TUNE-02 | A piano 20 cents sharp moves A4 by 20 cents, and C4 sits on that A4 | `acTune02_aPianoTwentyCentsSharpMovesA4ByTwentyCents` |
 | AC-TUNE-03 | The compact saved-notes string rebuilds a usable profile | `acTune03_parseSavedNotesRebuildsAUsableProfile` |
 | AC-TUNE-04 | Garbage saved notes are refused | `acTune04_garbageSavedNotesAreRefused` |
+| AC-TUNE-05 | Saved-note CSV uses a dot decimal so a comma locale cannot split it | `acTune05_savedNotesUseADotDecimalSoCommaLocalesCannotSplitThem` |
 | AC-VAL-07 | 45 cents sharp is `AMBIGUOUS` at concert A4 and `CORRECT` once A4 is taken from calibration | `NoteValidatorTest.acVal07_aSharpPianoIsCorrectOnceA4IsTakenFromCalibration` |
 
 ## Level 1 — Find this key (spec §19)
@@ -176,6 +177,7 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-LEARN-01 | Opens by asking for C | `LessonSessionTest.acLearn01_startsByAskingForC` |
 | AC-LEARN-02 | E when C is asked does not advance; copy is “Try C” | `acLearn02_wrongKeySaysTryCAndDoesNotAdvance` |
 | AC-LEARN-03 | A correct C moves to D, and the held C is not scored as a wrong D | `acLearn03_aCorrectCAdvancesToDAndDoesNotScoreTheHeldNoteAsWrongD` |
+| AC-LEARN-03b | One dropped frame on a held correct C is not a wrong D | `acLearn03b_oneDroppedFrameOnAHeldCorrectCIsNotAWrongD` |
 | AC-LEARN-04 | Silence never marks incorrect or advances | `acLearn04_unclearNeverMarksIncorrectOrAdvances` |
 | AC-LEARN-05 | Two notes at once are `AMBIGUOUS`, never wrong | `acLearn05_twoNotesAtOnceAreUnclearNotWrong` |
 | AC-LEARN-06 | C5 when C4 is asked is octave-mismatch, not advance | `acLearn06_octaveMismatchDoesNotAdvance` |

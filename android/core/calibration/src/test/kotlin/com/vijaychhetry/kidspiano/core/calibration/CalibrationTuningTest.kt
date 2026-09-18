@@ -54,6 +54,20 @@ class CalibrationTuningTest {
     }
 
     @Test
+    fun acTune05_savedNotesUseADotDecimalSoCommaLocalesCannotSplitThem() {
+        val notes = listOf(
+            NoteCalibration(60, midiToFreq(60), 261.9, 0.1, 0.95, 4),
+            NoteCalibration(62, midiToFreq(62), 294.1, 0.2, 0.95, 4),
+        )
+        val csv = formatSavedNotes(notes)
+        assertEquals("60:261.90:4,62:294.10:4", csv)
+        val parsed = parseSavedProfile("EXCELLENT", csv, "MIC", 44100, 1L)
+        assertNotNull(parsed)
+        assertEquals(261.9, parsed!!.notes[0].observedMedianFrequency, 0.001)
+        assertEquals(294.1, parsed.notes[1].observedMedianFrequency, 0.001)
+    }
+
+    @Test
     fun acTune04_garbageSavedNotesAreRefused() {
         assertNull(parseSavedProfile("EXCELLENT", "", "MIC", 44100, 1L))
         assertNull(parseSavedProfile("NOPE", "60:261.6:4", "MIC", 44100, 1L))

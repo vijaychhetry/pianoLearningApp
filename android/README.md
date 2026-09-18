@@ -54,7 +54,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 ./gradlew :app:installDebug
 ```
 
-JVM tests need no device (129 as of 0.4.0). They are held to mutation testing rather than to a green tick: see `docs/android/ACCEPTANCE_CRITERIA.md`. Real `AudioRecord` behaviour still needs a phone.
+JVM tests need no device (131 as of 0.4.0). They are held to mutation testing rather than to a green tick: see `docs/android/ACCEPTANCE_CRITERIA.md`. Real `AudioRecord` behaviour still needs a phone.
 
 ## What we are not building yet
 

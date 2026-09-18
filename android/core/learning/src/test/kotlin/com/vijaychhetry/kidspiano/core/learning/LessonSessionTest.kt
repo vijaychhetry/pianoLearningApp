@@ -69,6 +69,24 @@ class LessonSessionTest {
     }
 
     @Test
+    fun acLearn03b_oneDroppedFrameOnAHeldCorrectCIsNotAWrongD() {
+        val session = LessonSession()
+        session.begin(0)
+        var frame = 0
+        hold(session, 60, frame).also { frame += 8 }
+        // Piano sustain routinely drops a frame; the debouncer treats that as
+        // RELEASE, not IDLE. The lesson must not unlock the press.
+        var snap = session.onFrame(AudioFrame(FloatArray(2048), SR, frame * FRAME_MS))
+        frame++
+        snap = hold(session, 60, frame)
+        assertEquals(62, snap.expectedMidi)
+        assertNotEquals(RecognitionStatus.INCORRECT, snap.status)
+        assertEquals(LessonCue.YES, snap.cue)
+        assertEquals(1, snap.completedCount)
+        assertTrue(snap.feedback.contains("Yes"), "got: ${snap.feedback}")
+    }
+
+    @Test
     fun acLearn04_unclearNeverMarksIncorrectOrAdvances() {
         val session = LessonSession()
         session.begin(0)
@@ -191,9 +209,12 @@ class ParentGateTest {
     }
 }
 
-private fun play(session: LessonSession, midi: Int, atFrame: Int): LessonSnapshot {
+private fun play(session: LessonSession, midi: Int, atFrame: Int): LessonSnapshot =
+    playHz(session, midiToFreq(midi), atFrame)
+
+private fun playHz(session: LessonSession, hz: Double, atFrame: Int): LessonSnapshot {
     var snap = session.snapshot()
-    repeat(8) { i -> snap = session.onFrame(frame(midiToFreq(midi), atFrame + i)) }
+    repeat(8) { i -> snap = session.onFrame(frame(hz, atFrame + i)) }
     return snap
 }
 

@@ -10,6 +10,7 @@ import com.vijaychhetry.kidspiano.core.pitch.LabSession
 import com.vijaychhetry.kidspiano.core.pitch.LabSnapshot
 import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
 import com.vijaychhetry.kidspiano.core.pitch.NotePhase
+import com.vijaychhetry.kidspiano.core.pitch.YinHpsPitchDetector
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,7 +49,7 @@ data class AudioLabState(
  */
 class AudioLabViewModel : ViewModel() {
     private val input = AudioRecordInput()
-    private val session = LabSession()
+    private var session = LabSession()
     private val sources = MicSourceCycler(AudioRecordInput.SOURCE_ORDER)
     private val control = Mutex()
     private var collectJob: Job? = null
@@ -66,6 +67,11 @@ class AudioLabViewModel : ViewModel() {
 
     fun onPermission(granted: Boolean) {
         _state.update { it.copy(permissionNeeded = !granted) }
+    }
+
+    /** Match Practice: name notes using the saved piano, not concert A440. */
+    fun retune(a4Hz: Double) {
+        session = LabSession(detector = YinHpsPitchDetector(a4Hz = a4Hz))
     }
 
     fun start() {

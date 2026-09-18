@@ -3,6 +3,7 @@ package com.vijaychhetry.kidspiano.core.calibration
 import com.vijaychhetry.kidspiano.core.notes.A4_HZ
 import com.vijaychhetry.kidspiano.core.notes.centsOff
 import com.vijaychhetry.kidspiano.core.notes.midiToFreq
+import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -137,7 +138,13 @@ fun concertA4Hz(profile: CalibrationProfile): Double {
 /**
  * Rebuild a profile from the compact string [CalibrationStore] persists.
  * Spread is not stored; quality already decided whether it may be the default.
+ * Decimals are always a period so a comma locale cannot split the CSV.
  */
+fun formatSavedNotes(notes: List<NoteCalibration>): String =
+    notes.joinToString(",") {
+        val freq = String.format(Locale.US, "%.2f", it.observedMedianFrequency)
+        "${it.midiNote}:$freq:${it.sampleCount}"
+    }
 fun parseSavedProfile(
     quality: String,
     notesCsv: String,

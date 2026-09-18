@@ -3,6 +3,7 @@ package com.vijaychhetry.kidspiano
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +69,24 @@ private fun KidsPianoApp() {
     var homeTick by remember { mutableStateOf(0) }
     val profile = remember(homeTick) { store.load() }
     val pianoReady = lessonMayStart(profile)
+
+    BackHandler(enabled = dest != Dest.HOME) {
+        when (dest) {
+            Dest.PRACTICE -> {
+                lessonModel.stop()
+                homeTick++
+                dest = Dest.HOME
+            }
+            Dest.GATE -> dest = Dest.HOME
+            Dest.GROWNUPS -> {
+                labModel.stop()
+                calibrationModel.stop()
+                homeTick++
+                dest = Dest.HOME
+            }
+            Dest.HOME -> Unit
+        }
+    }
 
     Scaffold { padding ->
         Column(

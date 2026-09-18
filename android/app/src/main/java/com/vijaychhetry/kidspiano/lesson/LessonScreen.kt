@@ -38,7 +38,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
-import com.vijaychhetry.kidspiano.core.pitch.levelFraction
 
 @Composable
 fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
@@ -50,6 +49,14 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     ) { granted -> if (granted) model.start() }
 
     LaunchedEffect(Unit) { model.useProfile(store.load()) }
+    LaunchedEffect(state.ready) {
+        if (!state.ready || state.running || state.complete) return@LaunchedEffect
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO,
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) model.start()
+    }
 
     Column(
         Modifier
@@ -108,20 +115,6 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                     .background(MaterialTheme.colorScheme.secondary),
             )
         }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(levelFraction(state.level))
-                    .height(10.dp)
-                    .background(MaterialTheme.colorScheme.tertiary),
-            )
-        }
         state.error?.let {
             Text(it, color = MaterialTheme.colorScheme.error)
         }
@@ -129,22 +122,22 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             if (state.complete) {
                 Button(onClick = { model.playAgain() }) { Text("Play again") }
             } else {
-                Button(
-                    onClick = {
-                        val granted = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.RECORD_AUDIO,
-                        ) == PackageManager.PERMISSION_GRANTED
-                        if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
-                    },
-                    enabled = !state.running,
-                ) { Text(if (state.running) "Listening" else "Start") }
+                if (!state.running) {
+                    Button(
+                        onClick = {
+                            val granted = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.RECORD_AUDIO,
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                        },
+                    ) { Text("Start") }
+                }
                 OutlinedButton(onClick = { model.stop() }, enabled = state.running) {
                     Text("Pause")
                 }
             }
         }
-        TextButton(onClick = { model.switchSource() }) { Text("Change mic") }
     }
 }
 
