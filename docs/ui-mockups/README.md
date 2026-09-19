@@ -1,6 +1,23 @@
-# UI prototypes for 0.5.0 (pre-implementation)
+# UI prototypes (pre-implementation)
 
 These screens are the design to implement. They are **not** screenshots of a built APK.
+
+## 0.6.0 — level ladder, songs, falling game
+
+- `kids-prototype.html` — all five kid screens side by side. Open this one first.
+- `kids_levelmap.png` — eight stops, stars, locked stops dimmed.
+- `kids_drill.png` — levels 1–6. Hero is the note name in the key's colour; the key the child actually hit is ringed amber.
+- `kids_song.png` — note bubbles with lyric syllables, rhythm-free.
+- `kids_falling.png` — tiles falling to the hit line above the keyboard.
+- `kids_summary.png` — stars and the song offer.
+
+Shared assets: `kids.css`, `kids-keyboard.js`, `shot-levelmap|drill|song|falling|summary.html`.
+
+Key colours are fixed and used everywhere: C red `#E5484D`, D orange `#F76B15`,
+E yellow `#E8B931`, F green `#2FA84F`, G blue `#3A7DDE`. Colour is never the only
+signal — the note name is always shown too.
+
+## 0.5.0 — keyboard guide and export
 
 - `prototype.html` — interactive three-phone layout. Open it in a browser. The Calibrate **Key** dropdown changes the highlighted key. This HTML is the source of truth for copy and layout.
 - `shot-*.html` — single-phone pages used to capture the PNG mockups.
