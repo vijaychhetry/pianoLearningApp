@@ -24,6 +24,20 @@
 - On-screen keyboard is not tappable and has no Yamaha logo.
 - Do not implement until the human approves the mockups in `docs/ui-mockups/`.
 
+## Reviewer corrections (Opus 5, 2026-09-19)
+
+These override any older sentence in a later task.
+
+1. **Dropdown range is A2–F6, not C2–C7.** `YinHpsPitchDetector.MIN_FREQ_HZ = 110` / `MAX_FREQ_HZ = 1400` (A2 MIDI 45 … F6 MIDI 89). `selectableMidi()` = white keys in that window (27 keys). The 61-key *mini-map* still draws C2–C7; out-of-range keys are faded and omitted from the menu. Canonical append test uses **A4 (69)** or **B3 (59)**, never C2.
+2. **No jump after a finished profile.** After `CalibrationRunner.profile != null`, the Key dropdown is disabled until Redo. Do not clear `profile` from `jumpTo`. This avoids the ViewModel auto-`stop()`, `LaunchedEffect(profileToSave)` re-save, and the result card gating.
+3. **`jumpTo` resets the press.** `CalibrationRunner.jumpTo` must call `debouncer.reset()`, `session.onRelease()`, then `session.jumpTo`. A held note must not become a sample for the new key (`AC-SESS-09`). If the target already has `samplesPerNote` samples, **clear that key's bucket** so it is re-measured. Add a `CalibrationRunner` test, not only a session test.
+4. **Two-layer keyboard, not 36 × 9 dp keys.** Mini-map (all six Cs) + zoom window (~C3–C5 for a C4 target). Target name is drawn *above* the zoomed key. Black key width ≈ 0.55 × white. Geometry lives in `:core:notes` as tested fractions (`whiteKeyLeftFraction`, `blackKeyLeftFraction`, `zoomWindow(highlightMidi)`).
+5. **Copy uses note names**, not letters, anywhere a key is named (`Try D4.`, `Yes! Now D4.`, `Play the C4 key.`, `That was C. Please play C2.` is forbidden). Octave copy is `That was C5. Press C4.` — no color word.
+6. **`LessonViewModel.useProfile(profile, notes)`.** `LessonScreen` already has a `CalibrationStore`; it passes `store.lessonMidi()`. Map `expectedMidi` in `toUi`.
+7. **Session log:** parse/serialize in `:core:diagnostics` (round-trip tested). Append-only file write on `Dispatchers.IO`. Rotate at 2000 lines (`session.jsonl` → `session.1.jsonl`). Log a calibrate event only when `Offer` *changes* or a new press starts — never per-frame `UNCLEAR`.
+8. **Quality still requires C4–G4** after an extra key: add a test. **C3–G3 against a C4–G4 profile** scores a synthesized C3 `CORRECT`. **`lessonSessionFor(profile, notes)`** is the failing Task 4 surface (`acLearn12` constructor-only is characterization).
+9. **Task 8:** *replace* `AC-LEARN-06` (keep “does not advance”). Give every new test an AC row. Export filenames `yyyy-MM-dd-HHmm` in UTC. JSON is compact (no spaces). `selectableMidi()` reuses `isWhiteMidi` / `whiteKeys()`.
+
 ## File map
 
 - Create: `android/core/notes/src/main/kotlin/com/vijaychhetry/kidspiano/core/notes/PianoKeyboard.kt`
@@ -72,16 +86,21 @@ data class KeyboardKey(
 
 fun psrF52Keys(): List<KeyboardKey>
 fun whiteKeys(): List<KeyboardKey> // 36 whites
+const val DETECTABLE_LOW_MIDI = 45  // A2, YinHpsPitchDetector.MIN_FREQ_HZ
+const val DETECTABLE_HIGH_MIDI = 89 // F6
+fun selectableMidi(): List<Int> // whites in 45..89 (27 keys)
 fun defaultLessonMidi(): List<Int> = listOf(60, 62, 64, 65, 67)
 fun lowerClusterLessonMidi(): List<Int> = listOf(48, 50, 52, 53, 55)
+fun zoomWindow(highlightMidi: Int): List<KeyboardKey> // ~15 whites around the target
+fun whiteKeyLeftFraction(whiteIndex: Int, whiteCount: Int): Float
+fun blackKeyLeftFraction(precedingWhiteIndex: Int, whiteCount: Int): Float
 fun lessonSets(): List<Pair<String, List<Int>>> = listOf(
     "C4–G4 (first)" to defaultLessonMidi(),
     "C3–G3 (lower)" to lowerClusterLessonMidi(),
 )
 
 // CalibrationSession — notes constructor still accepted; copied into noteOrder
-fun selectableMidi(): List<Int>  // 36 whites C2–C7
-fun jumpTo(midi: Int): Boolean   // false for black / out of range
+fun jumpTo(midi: Int): Boolean   // false for black / out of detectable range
 
 // SessionLog — in-memory only. App persists toJsonl().
 data class SessionLogLine(
@@ -176,6 +195,28 @@ class PianoKeyboardTest {
         assertEquals(-1, cSharp4.whiteIndex)
         assertEquals("C#", cSharp4.letter)
     }
+
+    @Test
+    fun acKey06_selectableWhitesAreOnlyWhatTheDetectorCanHear() {
+        val midis = selectableMidi()
+        assertEquals(27, midis.size)
+        assertEquals(45, midis.first()) // A2
+        assertEquals(89, midis.last())  // F6
+        assertFalse(36 in midis)        // C2 is on the mini-map only
+        assertFalse(96 in midis)        // C7 is on the mini-map only
+        assertTrue(60 in midis)
+    }
+
+    @Test
+    fun acKey07_zoomWindowAroundC4IsC3ToC5() {
+        val zoom = zoomWindow(60)
+        assertEquals("C3", zoom.first { it.isWhite }.name)
+        assertEquals("C5", zoom.last { it.isWhite }.name)
+        assertTrue(zoom.any { it.midi == 60 && it.isWhite })
+        assertEquals(0f, whiteKeyLeftFraction(0, 36), 0.0001f)
+        assertTrue(blackKeyLeftFraction(0, 36) > 0f)
+        assertTrue(blackKeyLeftFraction(0, 36) < whiteKeyLeftFraction(1, 36))
+    }
 }
 ```
 
@@ -233,6 +274,31 @@ fun lessonSets(): List<Pair<String, List<Int>>> = listOf(
     "C4–G4 (first)" to defaultLessonMidi(),
     "C3–G3 (lower)" to lowerClusterLessonMidi(),
 )
+
+const val DETECTABLE_LOW_MIDI = 45
+const val DETECTABLE_HIGH_MIDI = 89
+
+fun selectableMidi(): List<Int> =
+    whiteKeys().map { it.midi }.filter { it in DETECTABLE_LOW_MIDI..DETECTABLE_HIGH_MIDI }
+
+fun zoomWindow(highlightMidi: Int): List<KeyboardKey> {
+    val keys = psrF52Keys()
+    val whites = keys.filter { it.isWhite }
+    val center = whites.indexOfFirst { it.midi == highlightMidi }.coerceAtLeast(0)
+    val start = (center - 7).coerceAtLeast(0)
+    val end = (start + 14).coerceAtMost(whites.lastIndex)
+    val from = whites[start].midi
+    val to = whites[end].midi
+    return keys.filter { it.midi in from..to }
+}
+
+fun whiteKeyLeftFraction(whiteIndex: Int, whiteCount: Int): Float =
+    whiteIndex.toFloat() / whiteCount
+
+fun blackKeyLeftFraction(precedingWhiteIndex: Int, whiteCount: Int): Float {
+    val whiteW = 1f / whiteCount
+    return (precedingWhiteIndex + 1) * whiteW - 0.275f * whiteW
+}
 ```
 
 - [ ] **Step 4: Run tests and make sure they pass**
@@ -298,24 +364,33 @@ fun acCalJump02_unknownBlackKeyIsRefused() {
 }
 
 @Test
-fun acCalJump03_newWhiteKeyIsAppended() {
+fun acCalJump03_newDetectableWhiteKeyIsAppended() {
     val session = CalibrationSession()
-    assertTrue(session.jumpTo(36)) // C2
-    assertEquals(36, session.currentMidi)
-    assertTrue(session.notes.containsAll(MVP_CALIBRATION_MIDI + 36))
+    assertTrue(session.jumpTo(69)) // A4 — inside A2–F6
+    assertEquals(69, session.currentMidi)
+    assertTrue(session.notes.containsAll(MVP_CALIBRATION_MIDI + 69))
     assertEquals(6, session.notes.size)
 }
 
 @Test
-fun acCalJump04_selectableMidiIsThirtySixWhites() {
-    assertEquals(36, selectableMidi().size)
-    assertEquals(36, selectableMidi().first())
-    assertEquals(96, selectableMidi().last())
-    assertFalse(61 in selectableMidi())
+fun acCalJump04_c2IsRefusedBecauseTheDetectorCannotHearIt() {
+    val session = CalibrationSession()
+    assertFalse(session.jumpTo(36))
+    assertEquals(60, session.currentMidi)
+}
+
+@Test
+fun acCalJump05_jumpingToAFinishedKeyClearsItsSamples() {
+    val session = CalibrationSession(samplesPerNote = 2)
+    repeat(2) { session.press(60, midiToFreq(60)); session.onRelease() }
+    assertEquals(62, session.currentMidi)
+    assertTrue(session.jumpTo(60))
+    assertEquals(0, session.acceptedCount(60))
+    assertEquals(60, session.currentMidi)
 }
 ```
 
-`selectableMidi()` is a top-level function in the calibration package (or a method on the session — pick **top-level** so the dropdown can render before Start).
+Import `selectableMidi` from `:core:notes`. Do not re-derive pitch classes in the calibration module.
 
 - [ ] **Step 2: Run test — expect FAIL** (`jumpTo` unresolved).
 
@@ -324,14 +399,9 @@ Run: `./gradlew :core:calibration:test --tests com.vijaychhetry.kidspiano.core.c
 - [ ] **Step 3: Implement**
 
 ```kotlin
-fun selectableMidi(): List<Int> =
-    (36..96).filter { midi ->
-        val pc = ((midi % 12) + 12) % 12
-        pc == 0 || pc == 2 || pc == 4 || pc == 5 || pc == 7 || pc == 9 || pc == 11
-    }
-
 fun jumpTo(midi: Int): Boolean {
     if (midi !in selectableMidi()) return false
+    if (acceptedCount(midi) >= samplesPerNote) accepted.remove(midi)
     if (midi !in noteOrder) noteOrder.add(midi)
     index = noteOrder.indexOf(midi)
     sampledThisPress = false
@@ -339,9 +409,25 @@ fun jumpTo(midi: Int): Boolean {
 }
 ```
 
-Add `fun jumpTo(midi: Int): Snapshot` on `CalibrationRunner` that calls `session.jumpTo` and returns `snapshot("Now play ${letterOf(session.currentMidi)}.")`. If jump returns false, keep the current target and say `That key is not a white key on this piano.`
+Add `fun jumpTo(midi: Int): Snapshot` on `CalibrationRunner`:
 
-If `session` is already complete (`currentMidi == null`), `jumpTo` that appends must still work so a grown-up can add C2 after C–G without Redo. Implement that by allowing jump after complete (index moves onto the new key; do not clear accepted samples).
+```kotlin
+fun jumpTo(midi: Int): Snapshot {
+    if (profile != null) return snapshot("Redo first if you want a different key.")
+    debouncer.reset()
+    session.onRelease()
+    val ok = session.jumpTo(midi)
+    val target = session.currentMidi
+    return snapshot(
+        if (ok) "Now play ${target?.let { midiToNoteName(it) }}."
+        else "This piano has that key; the phone cannot hear it yet.",
+    )
+}
+```
+
+Add `CalibrationRunnerTest.acCalJump06_heldNoteDoesNotSampleTheNewKey` (hold C4, `jumpTo(65)`, more C4 frames → F4 `acceptedCount` stays 0) and `acCalJump07_jumpAfterProfileIsIgnored`.
+
+Expose `targetMidi` on `CalibrationUiState`.
 
 - [ ] **Step 4: Run** `./gradlew :core:calibration:test` — PASS, including the original AC-SESS suite.
 
@@ -528,7 +614,7 @@ private fun childCopy(status: RecognitionStatus, expected: Int, detected: Int?):
         RecognitionStatus.INCORRECT -> "Try $letter."
         RecognitionStatus.CORRECT_OCTAVE_MISMATCH -> {
             val heard = detected?.let { midiToNoteName(it) } ?: letter
-            "That was $heard. Press the purple ${midiToNoteName(expected)}."
+            "That was $heard. Press ${midiToNoteName(expected)}."
         }
         else -> UNCLEAR_COPY
     }
@@ -570,12 +656,8 @@ fun lessonSessionFor(
 
 Keyboard drawing rules:
 
-- White keys: 36 equal-width rectangles that **fill the phone width** (`fillMaxWidth() / 36`) so all six C labels are on screen at once. Height ~88.dp. If a device is narrower than 320.dp, fall back to min 9.dp + `horizontalScroll`.
-- Black keys: overlay at 0.6 of white height, width ~0.55 of a white key, standard C#/D#/F#/G#/A# grouping.
-- Highlight: fill the target white key `#5B3CC4` and draw the name (`C4`) on it in white, 10.sp.
-- Other keys of the same letter: 30% alpha purple outline, not filled.
-- Labels under the strip only on C whites: `C2`…`C7`.
-- Auto-scroll: `LaunchedEffect(highlightMidi)` + `ScrollState` so the highlighted white key's left edge is near 1/3 of the viewport.
+- **Mini-map:** 36 equal-width whites, height ~28.dp, C2–C7 labels, faded outside A2–F6, target is a tall tick.
+- **Zoom:** `zoomWindow(highlightMidi)` (~15 whites). Height ~88.dp. Black width 0.55 × white, height 0.62 × white. Target filled `#5B3CC4`. Name (`C4`) drawn **above** the key, 12.sp. Same-letter keys in the zoom get a 30% outline.
 - Not a playable toy: no `clickable` / no tap-to-inject.
 - No brand marks.
 
@@ -595,7 +677,7 @@ No new JVM test for Compose. Proof for this task is `:app:assembleDebug` plus th
 
 - [ ] **Step 1:** There is no Compose test harness in this repo. Do **not** add empty `androidTest`. After the view exists, run `./gradlew :core:learning:test :app:assembleDebug`.
 
-- [ ] **Step 2:** Implement `PianoKeyboardView` as a `Box` with a `Row(Modifier.fillMaxWidth())` of equal-weight whites and absolutely positioned blacks (`offset` from `whiteIndex / 36f * width`). Only add `horizontalScroll` if the computed white width would drop below 9.dp.
+- [ ] **Step 2:** Implement `PianoKeyboardView` as a column: mini-map `Row` (36 whites) + zoom `Box` using `whiteKeyLeftFraction` / `blackKeyLeftFraction` from Task 1.
 
 - [ ] **Step 3:** Swap Lesson hero text from `state.letter` to `state.noteName`. Pass `highlightMidi = state.expectedMidi`.
 
@@ -613,13 +695,13 @@ No new JVM test for Compose. Proof for this task is `:app:assembleDebug` plus th
 - Modify: `android/app/src/main/java/com/vijaychhetry/kidspiano/calibration/CalibrationStore.kt` — `lessonSet` get/set (`default` | `lower`)
 - Modify: `android/app/src/main/java/com/vijaychhetry/kidspiano/MainActivity.kt` — `GrownUpsTab { CALIBRATE, LAB, FILES }`
 - Create: `android/app/src/main/java/com/vijaychhetry/kidspiano/grownups/FilesScreen.kt` (UI only this task: lesson-set dropdown; export buttons disabled until Task 7)
-- Modify: `android/app/src/main/java/com/vijaychhetry/kidspiano/lesson/LessonViewModel.kt` — `useProfile(profile)` reads store lesson set (or MainActivity passes notes)
+- Modify: `android/app/src/main/java/com/vijaychhetry/kidspiano/lesson/LessonViewModel.kt` — `useProfile(profile, notes)`
 
 **Interfaces:**
 - Consumes: `CalibrationRunner.jumpTo`, `selectableMidi()`, `defaultLessonMidi()`, `lowerClusterLessonMidi()`
 - Produces: working `ExposedDropdownMenuBox` labeled **Key**; Files tab; lesson-set pref
 
-Dropdown items: every `whiteKeys()` name (`C2` … `B6` plus `C7`). Selecting one calls `model.jumpTo(midi)` even while running and even before Start.
+Dropdown items: `selectableMidi()` names (A2–F6 whites). Selecting one calls `model.jumpTo(midi)` before Start or while running. Disabled after a finished profile until Redo.
 
 Under the dropdown, `PianoKeyboardView(highlightMidi = current target)`.
 
@@ -633,13 +715,13 @@ fun lessonMidi(): List<Int> = when (prefs.getString("lessonSet", "default")) {
 fun setLessonSet(id: String) { prefs.edit().putString("lessonSet", id).apply() }
 ```
 
-`LessonViewModel.useProfile` must call `lessonSessionFor(profile, store.lessonMidi())`. `LaunchedEffect` on `LessonScreen` already loads the store.
+`LessonScreen` calls `model.useProfile(store.load(), store.lessonMidi())`. `CalibrationStore.lessonMidi()` uses JVM helper `lessonMidiFor(prefs.getString("lessonSet", "default"))` so the mapping is tested.
 
 Files tab copy (this task): heading `Files`, body `Export lands in the next change.`, lesson-set dropdown live now.
 
 - [ ] **Step 1:** JVM coverage for the lesson set is `acLearn12` from Task 4. Add a tiny test next to `CalibrationTuningTest` only if you put `lessonMidi` parsing in a JVM function. Prefer keeping the pref key in `CalibrationStore` and not inventing a new module.
 
-- [ ] **Step 2:** Wire dropdown + keyboard on `CalibrationScreen`. Dropdown stays enabled while running. After a finished profile, jumping to an extra key (C2) starts asking for that key without wiping C–G samples (Task 2 rule). Redo still clears everything.
+- [ ] **Step 2:** Wire dropdown + two-layer keyboard on `CalibrationScreen`. Dropdown enabled before Start and while running; disabled when `state.profile != null` until Redo.
 
 - [ ] **Step 3:** Add the Files tab button beside Audio Lab. Do not add a bottom bar.
 
@@ -799,7 +881,7 @@ New AC rows (IDs must match test method names):
 | AC-LOG-EXPORT-01 | One JSON object per line, no audio | `SessionLogTest.acLog01_appendWritesOneJsonObjectPerLine` |
 | AC-LOG-EXPORT-02 | Cap drops oldest | `acLog02_capsAtMaxLinesByDroppingOldest` |
 | AC-EXPORT-01 | Calibration JSON round-trips medians | `CalibrationExportTest.acExport01_roundTripPreservesMediansAndQuality` |
-| AC-LEARN-06 | Octave mismatch names C5 and C4 | `acLearn06_octaveMismatchNamesBothKeys` |
+| AC-LEARN-06 | Octave mismatch names C5 and C4 and does not advance | `acLearn06_octaveMismatchNamesBothKeys` *(replaces the 0.4.0 row)* |
 | AC-LEARN-12 | Lower cluster starts on C3 | `acLearn12_lowerClusterStartsOnC3` |
 
 **Automation (must run before claiming done):**

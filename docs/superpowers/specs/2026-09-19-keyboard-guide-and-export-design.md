@@ -29,9 +29,12 @@ Session logs today are only the **in-memory** Audio Lab list (about 40 lines). T
 
 ## Product decisions (this slice)
 
-1. **On-screen 61-key keyboard** (C2–C7, matching PSR-F52) on Practice and Calibrate. Fit all 36 white keys in the phone width so the child can **see all six C labels at once** (`C2`…`C7`). The target key is filled purple with its name (`C4`) on the key. Other C keys stay visible and get a light outline. Only **C** keys are lettered under the strip. Horizontal scroll is a fallback if a very narrow device clips the strip, and then auto-scroll keeps the target on screen. No Yamaha logo. Keys are not tappable in Level 1 — the child plays the real piano.
+1. **Two-layer on-screen keyboard** (no Yamaha logo, not tappable):
+   - **Mini-map** of all 61 keys (C2–C7). All six C labels (`C2`…`C7`) are visible. The target is a tall tick. Keys the microphone cannot hear (below A2 / above F6) stay on the map but look faded.
+   - **Zoom strip** of about two octaves around the target (for C4: C3–C5) at a real key width. The target is filled purple. Its name sits **above** the key, not inside a 9 dp cell. Other same-letter keys in the zoom get a light outline.
+   - Copy names the note (`C4`), not a color. Octave-mismatch: `That was C5. Press C4.`
 2. **Level 1 lesson set stays C4–G4** by default. Other letters and other octaves are not dumped on the child in one run. Grown-ups get a **Lesson set** control: `C4–G4 (first)` | `C3–G3 (lower)`. Stored in the same `calibration` prefs as `lessonSet=default|lower`. Home Practice uses that list. Quality for a default profile still requires C4–G4 (spec §11).
-3. **Calibrate key dropdown** is real: every white key C2–C7 (36 items), defaulting to the current wizard note. Choosing D4 jumps the wizard to D4 even before Start. Choosing a white key not in the session **appends** it. Skip still works. Extra keys are stored and used for A4 retune if present. Black keys are refused.
+3. **Calibrate key dropdown** is real and limited to keys the detector can hear: white keys from **A2 to F6** (27 items). C2–G2 and G6–C7 appear on the mini-map only, disabled in the menu, with one line: `This piano has that key; the phone cannot hear it yet.` Default is the current wizard note. Choosing D4 jumps the wizard to D4 before Start or during a run. Choosing a new in-range white key **appends** it. Jumping resets the press detector so a held note cannot be banked as the new key. Jumping to a key that already has enough samples **clears that key** so it is re-measured. After a finished profile is on screen, the dropdown waits for **Redo** — do not jump-after-complete. Black keys are refused. Extra in-range keys are stored and used for A4 retune if present. Quality still requires C4–G4.
 4. **Grown-ups gain a third tab: Files** (same top-tab pattern as Calibrate / Audio Lab). No new bottom navigation. Files holds **Lesson set**, **Export calibration**, and **Export session log**. Calibrate also shows a compact Export button after a profile exists.
 5. **Export** via the Android share sheet (Drive, Gmail, Files):
    - `calibration-<date>.json` — full profile (quality, source, sample rate, per-note median/spread/count).
@@ -52,13 +55,14 @@ Home
 Play this key
         C4          ← hero is note name, not letter alone
        (cue)
-   Yes! Now D.
+   Yes! Now D4.
    1 of 5  [====    ]
-[ C2 ·· C3 ·· [C4] ·· C5 ·· C6 ·· C7 ]  ← 61-key strip, C4 purple
+[ C2  C3 [C4] C5  C6  C7 ]     ← 61-key mini-map, all six Cs
+      C3  D3 … [C4] … C5       ← zoomed two octaves, name above the key
               Pause
 ```
 
-Octave-mismatch copy becomes: `That was C5. Press the purple C4.`
+Octave-mismatch copy: `That was C5. Press C4.`
 
 ### Calibrate
 

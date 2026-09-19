@@ -8,6 +8,10 @@ These screens are the design to implement. They are **not** screenshots of a bui
 - `mockup_calibrate_key_dropdown.png` — Calibrate: working Key dropdown + same keyboard + export.
 - `mockup_export_files.png` — Grown-ups **Files** tab (third top tab, not a new bottom bar).
 
+The keyboard is two layers: a 61-key mini-map (all six C labels) and a zoomed
+two-octave strip so the target is large enough to read. Calibrate’s dropdown
+lists A2–F6 only.
+
 Rules the pictures must keep:
 
 - No Yamaha logo.
