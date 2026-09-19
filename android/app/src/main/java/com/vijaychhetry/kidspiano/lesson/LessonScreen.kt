@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,10 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -71,8 +73,8 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             TextButton(onClick = {
                 model.stop()
@@ -80,150 +82,153 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             }) { Text("Home") }
             Text(
                 Copy.NOT_CALIBRATED,
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
         }
         return
     }
 
-    val hero = if (state.complete) {
-        "★" to "You did it"
-    } else {
-        val midi = state.expectedMidi
-        val letter = midi?.let { letterOf(it) } ?: state.letter
-        val subtitle = when (midi) {
-            KEY_C4 -> "C4  ·  middle C"
-            null -> state.noteName
-            else -> midiToNoteName(midi)
-        }
-        letter to subtitle
+    val midi = state.expectedMidi
+    val letter = if (state.complete) "★" else midi?.let { letterOf(it) } ?: state.letter
+    val subtitle = when {
+        state.complete -> "You did it"
+        midi == KEY_C4 -> "C4 · middle C"
+        midi != null -> midiToNoteName(midi)
+        else -> state.noteName
     }
 
-    Row(
+    BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
-        Column(
-            Modifier
-                .widthIn(min = 200.dp, max = 320.dp)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+        val heroSp = (maxHeight.value * 0.22f).coerceIn(40f, 56f).sp
+        val promptWidth = maxWidth * 0.34f
+        val compactBtn = ButtonDefaults.buttonColors()
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                Modifier
+                    .width(promptWidth)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                TextButton(onClick = {
-                    model.stop()
-                    onHome()
-                }) { Text("Home") }
-                Text(state.lessonSetLabel, style = MaterialTheme.typography.labelSmall)
-            }
-            Text(
-                if (state.complete) "You did it" else "Play this key",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                hero.first,
-                fontSize = 72.sp,
-                fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-            )
-            Text(
-                hero.second,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                CueBadge(state.cue, compact = true)
-                Column(Modifier.weight(1f)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = {
+                            model.stop()
+                            onHome()
+                        },
+                        contentPadding = ButtonDefaults.TextButtonContentPadding,
+                    ) { Text("Home") }
                     Text(
-                        state.feedback,
-                        style = MaterialTheme.typography.titleMedium,
+                        if (state.complete) "Done" else "${state.completedCount}/${state.total}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+                Column {
+                    Text(
+                        letter,
+                        fontSize = heroSp,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        lineHeight = heroSp,
+                    )
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 3,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    state.line2?.let {
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CueBadge(state.cue)
+                    Text(
+                        state.feedback,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth(state.progress.coerceIn(0f, 1f))
+                                .height(6.dp)
+                                .background(MaterialTheme.colorScheme.secondary),
+                        )
+                    }
+                    state.error?.let {
                         Text(
                             it,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 2,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                }
-            }
-            Text(
-                if (state.complete) "All five keys" else "${state.completedCount} of ${state.total}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(state.progress.coerceIn(0f, 1f))
-                        .height(8.dp)
-                        .background(MaterialTheme.colorScheme.secondary),
-                )
-            }
-            state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, maxLines = 2)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (state.complete) {
-                    Button(onClick = { model.playAgain() }) { Text("Play again") }
-                } else {
-                    if (!state.running) {
-                        Button(
-                            onClick = {
-                                val granted = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.RECORD_AUDIO,
-                                ) == PackageManager.PERMISSION_GRANTED
-                                if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
-                            },
-                        ) { Text("Start") }
-                    }
-                    OutlinedButton(onClick = { model.stop() }, enabled = state.running) {
-                        Text("Pause")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (state.complete) {
+                            Button(
+                                onClick = { model.playAgain() },
+                                colors = compactBtn,
+                                modifier = Modifier.height(40.dp),
+                            ) { Text("Play again") }
+                        } else if (!state.running) {
+                            Button(
+                                onClick = {
+                                    val granted = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                                },
+                                modifier = Modifier.height(40.dp),
+                            ) { Text("Start") }
+                        } else {
+                            OutlinedButton(
+                                onClick = { model.stop() },
+                                modifier = Modifier.height(40.dp),
+                            ) { Text("Pause") }
+                        }
                     }
                 }
             }
-        }
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.Center,
-        ) {
             PianoKeyboardView(
                 highlightMidi = state.expectedMidi,
                 heardMidi = state.heardMidi,
                 compact = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
             )
         }
     }
 }
 
 @Composable
-private fun CueBadge(cue: LessonCue, compact: Boolean = false) {
+private fun CueBadge(cue: LessonCue) {
     val (symbol, description) = when (cue) {
         LessonCue.YES, LessonCue.DONE -> "✓" to "correct"
         LessonCue.TRY -> "↺" to "try again"
@@ -237,15 +242,14 @@ private fun CueBadge(cue: LessonCue, compact: Boolean = false) {
         LessonCue.UNCLEAR -> MaterialTheme.colorScheme.primary
         LessonCue.LISTEN -> MaterialTheme.colorScheme.outline
     }
-    val size = if (compact) 44.dp else 56.dp
     Box(
         Modifier
-            .size(size)
+            .size(36.dp)
             .clip(CircleShape)
             .background(color.copy(alpha = 0.2f))
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, fontSize = if (compact) 22.sp else 28.sp, color = color, fontWeight = FontWeight.Bold)
+        Text(symbol, fontSize = 18.sp, color = color, fontWeight = FontWeight.Bold)
     }
 }

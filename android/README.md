@@ -21,7 +21,7 @@ Phase 3 start: **Level 1 Find this key** (C D E F G) for the child.
 
 ## Download APK (no Android Studio)
 
-A debug APK is in [`releases/KidsPiano-debug-0.5.1.apk`](../releases/KidsPiano-debug-0.5.1.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+A debug APK is in [`releases/KidsPiano-debug-0.5.2.apk`](../releases/KidsPiano-debug-0.5.2.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
 
 If 0.5.0 is not in the folder yet, the previous child build is still at [`releases/KidsPiano-debug-0.4.0.apk`](../releases/KidsPiano-debug-0.4.0.apk).
 

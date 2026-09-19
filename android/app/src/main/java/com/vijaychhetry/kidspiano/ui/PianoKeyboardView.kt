@@ -59,19 +59,28 @@ fun PianoKeyboardView(
             contentDescription = "Piano guide. Play ${displayNoteName(target)}."
         },
     ) {
-        MiniMap(target, heardMidi, if (compact) 28.dp else 36.dp)
-        CLabels()
-        Text(
-            "Press ${displayNoteName(target)}",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
-        )
+        MiniMap(target, heardMidi, if (compact) 22.dp else 36.dp)
+        CLabels(if (compact) 12.dp else 16.dp)
+        if (!compact) {
+            Text(
+                "Press ${displayNoteName(target)}",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
+            )
+        }
         ZoomStrip(
             highlightMidi = target,
             heardMidi = heardMidi,
             compact = compact,
-            modifier = Modifier.padding(top = 2.dp),
+            modifier = if (compact) {
+                Modifier
+                    .padding(top = 4.dp)
+                    .weight(1f, fill = true)
+                    .fillMaxWidth()
+            } else {
+                Modifier.padding(top = 2.dp)
+            },
         )
     }
 }
@@ -123,11 +132,11 @@ private fun MiniMap(highlightMidi: Int, heardMidi: Int?, height: Dp) {
 }
 
 @Composable
-private fun CLabels() {
+private fun CLabels(height: Dp = 16.dp) {
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .height(16.dp),
+            .height(height),
     ) {
         cOctaveMarkers().forEach { midi ->
             val left = whiteKeyLeftFraction(midi, PSR_LOW_MIDI, PSR_HIGH_MIDI)
@@ -154,7 +163,7 @@ private fun ZoomStrip(
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
-            .height(if (compact) 96.dp else 120.dp)
+            .then(if (compact) Modifier.fillMaxHeight() else Modifier.height(120.dp))
             .clip(RoundedCornerShape(10.dp))
             .background(Color(0xFFD9D0C6)),
     ) {
