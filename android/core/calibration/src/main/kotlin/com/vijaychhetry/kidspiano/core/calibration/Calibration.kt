@@ -143,7 +143,8 @@ fun concertA4Hz(profile: CalibrationProfile): Double {
 fun formatSavedNotes(notes: List<NoteCalibration>): String =
     notes.joinToString(",") {
         val freq = String.format(Locale.US, "%.2f", it.observedMedianFrequency)
-        "${it.midiNote}:$freq:${it.sampleCount}"
+        val spread = String.format(Locale.US, "%.2f", it.frequencySpread)
+        "${it.midiNote}:$freq:${it.sampleCount}:$spread"
     }
 fun parseSavedProfile(
     quality: String,
@@ -164,11 +165,12 @@ fun parseSavedProfile(
         val midi = parts[0].toIntOrNull() ?: return@mapNotNull null
         val freq = parts[1].toDoubleOrNull() ?: return@mapNotNull null
         val count = parts.getOrNull(2)?.toIntOrNull() ?: 0
+        val spread = parts.getOrNull(3)?.toDoubleOrNull() ?: 0.0
         NoteCalibration(
             midiNote = midi,
             expectedFrequency = midiToFreq(midi),
             observedMedianFrequency = freq,
-            frequencySpread = 0.0,
+            frequencySpread = spread,
             confidence = if (count >= 4) 0.95 else 0.6,
             sampleCount = count,
         )

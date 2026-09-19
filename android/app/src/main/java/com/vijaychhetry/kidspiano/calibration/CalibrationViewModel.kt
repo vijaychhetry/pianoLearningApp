@@ -26,6 +26,7 @@ data class CalibrationUiState(
     val error: String? = null,
     val askLetter: String = "C",
     val askNoteName: String = "C4",
+    val askMidi: Int? = 60,
     val samplesDone: Int = 0,
     val samplesNeeded: Int = 0,
     val progress: Float = 0f,
@@ -103,6 +104,10 @@ class CalibrationViewModel : ViewModel() {
                 _state.update { it.copy(running = false, profile = null, profileToSave = null) }
             }
         }
+    }
+
+    fun jumpTo(midi: Int) {
+        viewModelScope.launch { control.withLock { publish(runner.jumpTo(midi)) } }
     }
 
     /** Skip a key the child cannot find; the quality score will reflect the gap. */
@@ -239,6 +244,7 @@ class CalibrationViewModel : ViewModel() {
             it.copy(
                 askLetter = snapshot.letter,
                 askNoteName = snapshot.noteName,
+                askMidi = snapshot.targetMidi,
                 samplesDone = snapshot.samplesDone,
                 samplesNeeded = snapshot.samplesNeeded,
                 progress = snapshot.progress,

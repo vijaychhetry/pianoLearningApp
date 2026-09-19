@@ -24,6 +24,7 @@ include(":core:notes")
 include(":core:pitch")
 include(":core:calibration")
 include(":core:learning")
+include(":core:diagnostics")
 
 val localProps = java.util.Properties()
 val localFile = file("local.properties")

@@ -11,8 +11,8 @@ android {
         applicationId = "com.vijaychhetry.kidspiano"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 8
+        versionName = "0.5.3"
     }
     buildTypes {
         release {
@@ -25,7 +25,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -34,6 +37,7 @@ dependencies {
     implementation(project(":core:pitch"))
     implementation(project(":core:calibration"))
     implementation(project(":core:learning"))
+    implementation(project(":core:diagnostics"))
     implementation(project(":core:audio"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

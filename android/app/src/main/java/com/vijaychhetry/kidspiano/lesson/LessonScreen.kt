@@ -7,16 +7,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -32,12 +36,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
+import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
+import com.vijaychhetry.kidspiano.core.notes.KEY_C4
+import com.vijaychhetry.kidspiano.core.notes.letterOf
+import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
+import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
 fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
@@ -47,8 +57,9 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) model.start() }
-
-    LaunchedEffect(Unit) { model.useProfile(store.load()) }
+    LaunchedEffect(Unit) {
+        model.useProfile(store.load(), store.lessonMidi())
+    }
     LaunchedEffect(state.ready) {
         if (!state.ready || state.running || state.complete) return@LaunchedEffect
         val granted = ContextCompat.checkSelfPermission(
@@ -58,71 +69,150 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
         if (granted) model.start()
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        TextButton(onClick = {
-            model.stop()
-            onHome()
-        }, modifier = Modifier.align(Alignment.Start)) {
-            Text("Home")
-        }
-
-        if (!state.ready) {
+    if (!state.ready) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            TextButton(onClick = {
+                model.stop()
+                onHome()
+            }) { Text("Home") }
             Text(
-                "Ask a grown-up to set up the piano first.",
-                style = MaterialTheme.typography.headlineSmall,
+                Copy.NOT_CALIBRATED,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
-            return@Column
         }
+        return
+    }
 
-        Text(
-            if (state.complete) "You did it" else "Play this key",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text(
-            if (state.complete) "★" else state.letter,
-            fontSize = 96.sp,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        CueBadge(state.cue)
-        Text(
-            state.feedback,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Text(
-            if (state.complete) "All five keys" else "${state.completedCount} of ${state.total}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Box(
+    val midi = state.expectedMidi
+    val letter = if (state.complete) "★" else midi?.let { letterOf(it) } ?: state.letter
+    val subtitle = when {
+        state.complete -> "You did it"
+        midi == KEY_C4 -> "C4 · middle C"
+        midi != null -> midiToNoteName(midi)
+        else -> state.noteName
+    }
+
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        val heroSp = (maxHeight.value * 0.14f).coerceIn(32f, 48f).sp
+        val pianoHeight = (maxHeight * 0.38f).coerceIn(112.dp, 160.dp)
+        val compactBtn = ButtonDefaults.buttonColors()
+        Column(
             Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .fillMaxSize()
+                .widthIn(max = 720.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = {
+                        model.stop()
+                        onHome()
+                    },
+                    contentPadding = ButtonDefaults.TextButtonContentPadding,
+                ) { Text("Home") }
+                Text(
+                    if (state.complete) "Done" else "${state.completedCount}/${state.total}",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                PianoKeyboardView(
+                    highlightMidi = state.expectedMidi,
+                    heardMidi = state.heardMidi,
+                    compact = true,
+                    modifier = Modifier
+                        .fillMaxWidth(0.92f)
+                        .height(pianoHeight),
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    letter,
+                    fontSize = heroSp,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    lineHeight = heroSp,
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(0.86f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    CueBadge(state.cue)
+                    Text(
+                        state.feedback,
+                        modifier = Modifier.padding(start = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
             Box(
                 Modifier
-                    .fillMaxWidth(state.progress.coerceIn(0f, 1f))
-                    .height(10.dp)
-                    .background(MaterialTheme.colorScheme.secondary),
-            )
-        }
-        state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.complete) {
-                Button(onClick = { model.playAgain() }) { Text("Play again") }
-            } else {
-                if (!state.running) {
+                    .fillMaxWidth(0.7f)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(state.progress.coerceIn(0f, 1f))
+                        .height(6.dp)
+                        .background(MaterialTheme.colorScheme.secondary),
+                )
+            }
+            state.error?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (state.complete) {
+                    Button(
+                        onClick = { model.playAgain() },
+                        colors = compactBtn,
+                        modifier = Modifier.height(40.dp),
+                    ) { Text("Play again") }
+                } else if (!state.running) {
                     Button(
                         onClick = {
                             val granted = ContextCompat.checkSelfPermission(
@@ -131,10 +221,13 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                             ) == PackageManager.PERMISSION_GRANTED
                             if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
                         },
+                        modifier = Modifier.height(40.dp),
                     ) { Text("Start") }
-                }
-                OutlinedButton(onClick = { model.stop() }, enabled = state.running) {
-                    Text("Pause")
+                } else {
+                    OutlinedButton(
+                        onClick = { model.stop() },
+                        modifier = Modifier.height(40.dp),
+                    ) { Text("Pause") }
                 }
             }
         }
@@ -158,12 +251,12 @@ private fun CueBadge(cue: LessonCue) {
     }
     Box(
         Modifier
-            .size(56.dp)
+            .size(36.dp)
             .clip(CircleShape)
             .background(color.copy(alpha = 0.2f))
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, fontSize = 28.sp, color = color, fontWeight = FontWeight.Bold)
+        Text(symbol, fontSize = 18.sp, color = color, fontWeight = FontWeight.Bold)
     }
 }

@@ -1,12 +1,17 @@
 package com.vijaychhetry.kidspiano
 
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,21 +39,30 @@ import com.vijaychhetry.kidspiano.calibration.CalibrationScreen
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.calibration.CalibrationViewModel
 import com.vijaychhetry.kidspiano.core.learning.lessonMayStart
+import com.vijaychhetry.kidspiano.grownups.FilesScreen
 import com.vijaychhetry.kidspiano.grownups.GrownUpsGateScreen
+import com.vijaychhetry.kidspiano.grownups.SetupScreen
 import com.vijaychhetry.kidspiano.home.HomeScreen
 import com.vijaychhetry.kidspiano.lab.AudioLabScreen
 import com.vijaychhetry.kidspiano.lab.AudioLabViewModel
 import com.vijaychhetry.kidspiano.lesson.LessonScreen
 import com.vijaychhetry.kidspiano.lesson.LessonViewModel
+import com.vijaychhetry.kidspiano.ui.LockScreenOrientation
 
 private enum class Dest { HOME, PRACTICE, GATE, GROWNUPS }
-private enum class GrownUpsTab { CALIBRATE, LAB }
+private enum class GrownUpsTab { SETUP, CALIBRATE, FILES, LAB }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+            }
+        }
         setContent {
             MaterialTheme(colorScheme = kidsScheme) {
                 KidsPianoApp()
@@ -60,7 +74,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun KidsPianoApp() {
     var dest by remember { mutableStateOf(Dest.HOME) }
-    var grownUpsTab by remember { mutableStateOf(GrownUpsTab.CALIBRATE) }
+    var grownUpsTab by remember { mutableStateOf(GrownUpsTab.SETUP) }
     val labModel: AudioLabViewModel = viewModel()
     val calibrationModel: CalibrationViewModel = viewModel()
     val lessonModel: LessonViewModel = viewModel()
@@ -69,6 +83,8 @@ private fun KidsPianoApp() {
     var homeTick by remember { mutableStateOf(0) }
     val profile = remember(homeTick) { store.load() }
     val pianoReady = lessonMayStart(profile)
+    val playSession = dest == Dest.PRACTICE
+    LockScreenOrientation(landscape = playSession)
 
     BackHandler(enabled = dest != Dest.HOME) {
         when (dest) {
@@ -88,7 +104,7 @@ private fun KidsPianoApp() {
         }
     }
 
-    Scaffold { padding ->
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
@@ -152,19 +168,30 @@ private fun GrownUpsTools(
                 TextButton(onClick = onHome) { Text("Kids Home") }
             }
             Row(
-                Modifier.fillMaxWidth().padding(top = 8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                TabButton("Setup", tab == GrownUpsTab.SETUP) {
+                    onTab(GrownUpsTab.SETUP)
+                }
                 TabButton("Calibrate", tab == GrownUpsTab.CALIBRATE) {
                     onTab(GrownUpsTab.CALIBRATE)
                 }
-                TabButton("Audio Lab", tab == GrownUpsTab.LAB) {
+                TabButton("Files", tab == GrownUpsTab.FILES) {
+                    onTab(GrownUpsTab.FILES)
+                }
+                TabButton("Lab", tab == GrownUpsTab.LAB) {
                     onTab(GrownUpsTab.LAB)
                 }
             }
         }
         when (tab) {
+            GrownUpsTab.SETUP -> SetupScreen()
             GrownUpsTab.CALIBRATE -> CalibrationScreen(calibrationModel)
+            GrownUpsTab.FILES -> FilesScreen()
             GrownUpsTab.LAB -> AudioLabScreen(labModel)
         }
     }

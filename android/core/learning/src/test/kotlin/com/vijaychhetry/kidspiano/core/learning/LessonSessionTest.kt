@@ -30,9 +30,9 @@ class LessonSessionTest {
         val snap = session.snapshot()
         assertEquals(60, snap.expectedMidi)
         assertEquals("C", snap.letter)
-        assertEquals("C4", snap.noteName)
+        assertEquals("C4 (middle C)", snap.noteName)
         assertEquals(LessonCue.LISTEN, snap.cue)
-        assertTrue(snap.feedback.contains("Play the C key"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
         assertFalse(snap.complete)
     }
@@ -45,7 +45,8 @@ class LessonSessionTest {
         assertEquals(60, snap.expectedMidi)
         assertEquals(LessonCue.TRY, snap.cue)
         assertEquals(RecognitionStatus.INCORRECT, snap.status)
-        assertTrue(snap.feedback.contains("Try C"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("E4"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
     }
 
@@ -128,7 +129,8 @@ class LessonSessionTest {
         assertEquals(60, snap.expectedMidi)
         assertEquals(RecognitionStatus.CORRECT_OCTAVE_MISMATCH, snap.status)
         assertEquals(LessonCue.OCTAVE, snap.cue)
-        assertTrue(snap.feedback.contains("other C"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C5"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
     }
 
@@ -146,6 +148,19 @@ class LessonSessionTest {
         assertEquals(5, snap.completedCount)
         assertTrue(snap.feedback.contains("all five"), "got: ${snap.feedback}")
         assertEquals(null, snap.expectedMidi)
+    }
+
+    @Test
+    fun acLearn13_secondHarmonicDominantC4AdvancesToD() {
+        val session = LessonSession()
+        session.begin(0)
+        var snap = session.snapshot()
+        repeat(16) { i ->
+            snap = session.onFrame(secondHeavyFrame(60, i))
+        }
+        assertEquals(62, snap.expectedMidi, "got ${snap.expectedMidi} cue=${snap.cue} ${snap.feedback}")
+        assertEquals(LessonCue.YES, snap.cue)
+        assertEquals(1, snap.completedCount)
     }
 
     @Test
@@ -194,18 +209,40 @@ class LessonPolicyTest {
         )
         assertFalse(lessonMayStart(blocked))
     }
+
+    @Test
+    fun acLearn12_lowerClusterUsesTheSameProfileAndAsksForC3() {
+        val engine = MedianCalibrationEngine()
+        val goodNotes = MVP_CALIBRATION_MIDI.associateWith { midi ->
+            List(4) { midiToFreq(midi) }
+        }
+        val good = engine.buildProfile(goodNotes, 44100, "MIC")
+        val session = lessonSessionFor(good, com.vijaychhetry.kidspiano.core.notes.lowerClusterLessonMidi())
+        session.begin(0)
+        assertEquals(48, session.expectedMidi)
+        val snap = play(session, 48, 0)
+        assertEquals(50, snap.expectedMidi)
+        assertTrue(snap.feedback.contains("Yes"), "got: ${snap.feedback}")
+    }
 }
 
 class ParentGateTest {
     @Test
-    fun acGate01_onlyTheSumOpensGrownUps() {
-        val gate = ParentGate(2, 5)
-        assertEquals("What is 2 + 5?", gate.prompt)
-        assertTrue(gate.accepts("7"))
-        assertTrue(gate.accepts(" 7 "))
-        assertFalse(gate.accepts("6"))
+    fun acR15_gateIsATimesTableInSixToNineAndWrongAnswersDoNotLockOut() {
+        val gate = ParentGate.of(7, 8)
+        assertEquals("What is 7 × 8?", gate.prompt)
+        assertTrue(gate.accepts("56"))
+        assertTrue(gate.accepts(" 56 "))
+        assertFalse(gate.accepts("54"))
         assertFalse(gate.accepts(""))
         assertFalse(gate.accepts("seven"))
+        assertFalse(gate.accepts("15"))
+        repeat(40) {
+            val roll = ParentGate()
+            assertTrue(roll.a in 6..9, "a=${roll.a}")
+            assertTrue(roll.b in 6..9, "b=${roll.b}")
+            assertTrue(roll.accepts((roll.a * roll.b).toString()))
+        }
     }
 }
 
@@ -235,6 +272,22 @@ private fun playPress(session: LessonSession, midi: Int, fromFrame: Int): Lesson
 
 private fun frame(hz: Double, index: Int, n: Int = 2048): AudioFrame {
     val tone = pianoTone(hz, SR, 1.0)
+    val start = (2000 + index % 8 * 64).coerceAtMost(tone.size - n)
+    return AudioFrame(tone.copyOfRange(start, start + n), SR, index * FRAME_MS)
+}
+
+private fun secondHeavyFrame(midi: Int, index: Int, n: Int = 2048): AudioFrame {
+    val f = midiToFreq(midi)
+    val samples = (SR * 1.0).toInt()
+    val tone = FloatArray(samples)
+    for (i in tone.indices) {
+        val t = i.toDouble() / SR
+        val attack = minOf(1.0, t / 0.008)
+        val sample = 0.22 * Math.sin(2 * Math.PI * f * t) +
+            1.00 * Math.sin(2 * Math.PI * 2 * f * t) +
+            0.35 * Math.sin(2 * Math.PI * 3 * f * t)
+        tone[i] = (0.28 * attack * sample).toFloat()
+    }
     val start = (2000 + index % 8 * 64).coerceAtMost(tone.size - n)
     return AudioFrame(tone.copyOfRange(start, start + n), SR, index * FRAME_MS)
 }

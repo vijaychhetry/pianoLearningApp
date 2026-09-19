@@ -27,7 +27,7 @@ class CalibrationRunnerTest {
         assertEquals(60, snapshot.targetMidi)
         assertEquals("C", snapshot.letter)
         assertEquals("C4", snapshot.noteName)
-        assertTrue(snapshot.feedback.contains("Play the C key"))
+        assertTrue(snapshot.feedback.contains("Play the C4 key"), "got: ${snapshot.feedback}")
         assertEquals(0f, snapshot.progress)
     }
 
@@ -38,8 +38,8 @@ class CalibrationRunnerTest {
         val snapshot = play(runner, midi = 64, atFrame = 0)
         assertEquals(60, snapshot.targetMidi, "still waiting for C")
         assertEquals(0, snapshot.samplesDone)
-        assertTrue(snapshot.feedback.contains("That was E"), "got: ${snapshot.feedback}")
-        assertTrue(snapshot.feedback.contains("play C"), "got: ${snapshot.feedback}")
+        assertTrue(snapshot.feedback.contains("That was E4"), "got: ${snapshot.feedback}")
+        assertTrue(snapshot.feedback.contains("play C4"), "got: ${snapshot.feedback}")
     }
 
     @Test
@@ -151,6 +151,29 @@ class CalibrationRunnerTest {
         assertNull(runner.profile)
         assertEquals(60, snapshot.targetMidi)
         assertEquals(0f, snapshot.progress)
+    }
+
+    @Test
+    fun acCalJump02_jumpAfterProfileIsIgnored() {
+        val runner = CalibrationRunner()
+        runner.begin(0)
+        repeat(MVP_CALIBRATION_MIDI.size) { runner.skip() }
+        assertNotNull(runner.profile)
+        val snap = runner.jumpTo(64)
+        assertEquals(null, snap.targetMidi)
+        assertNotNull(snap.profile)
+    }
+
+    @Test
+    fun acCalJump03_jumpingWhileHeldDoesNotSampleTheNewKey() {
+        val runner = CalibrationRunner()
+        runner.begin(0)
+        play(runner, 60, 0)
+        val jumped = runner.jumpTo(62)
+        assertEquals(62, jumped.targetMidi)
+        val held = play(runner, 60, 8)
+        assertEquals(62, held.targetMidi)
+        assertEquals(0, held.samplesDone)
     }
 }
 

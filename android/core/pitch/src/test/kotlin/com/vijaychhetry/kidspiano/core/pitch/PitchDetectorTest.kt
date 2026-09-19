@@ -117,6 +117,18 @@ class YinHpsPitchDetectorTest {
         assertTrue(abs(result.frequency!! - 452.0) < 5.0)
         assertFalse(result.ambiguous)
     }
+
+    @Test
+    fun acPitch08_c4WithLouderSecondHarmonicStillReadsC4() {
+        val result = detector.detect(slice(secondHarmonicDominant(midiToFreq(60), SR, 0.8)))
+        assertEquals(
+            60,
+            result.midiNote,
+            "PSR-F52 C4 often has a louder 2nd harmonic; got MIDI ${result.midiNote} at ${result.frequency} Hz",
+        )
+        assertFalse(result.ambiguous)
+        assertTrue(abs(result.frequency!! - midiToFreq(60)) < 8.0)
+    }
 }
 
 class NoteDebouncerTest {
@@ -203,3 +215,25 @@ private fun pianoFrame(frequency: Double): AudioFrame =
 
 private fun slice(tone: FloatArray, start: Int = 2000, n: Int = 2048): AudioFrame =
     AudioFrame(tone.copyOfRange(start, start + n), SR, 0)
+
+/**
+ * PSR-F52 C4 through a phone mic: weak fundamental, louder 2nd partial.
+ */
+internal fun secondHarmonicDominant(
+    frequency: Double,
+    sampleRate: Int,
+    durationSec: Double,
+    amplitude: Float = 0.28f,
+): FloatArray {
+    val n = (sampleRate * durationSec).toInt()
+    val out = FloatArray(n)
+    for (i in 0 until n) {
+        val t = i.toDouble() / sampleRate
+        val attack = minOf(1.0, t / 0.008)
+        val sample = 0.22 * Math.sin(2 * Math.PI * frequency * t) +
+            1.00 * Math.sin(2 * Math.PI * 2 * frequency * t) +
+            0.35 * Math.sin(2 * Math.PI * 3 * frequency * t)
+        out[i] = (amplitude * attack * sample).toFloat()
+    }
+    return out
+}

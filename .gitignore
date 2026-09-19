@@ -3,3 +3,5 @@ dist
 .DS_Store
 *.local
 coverage
+diagnostics/inbox/*
+!diagnostics/inbox/README.md

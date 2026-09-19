@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vijaychhetry.kidspiano.core.learning.Copy
+import com.vijaychhetry.kidspiano.ui.HoldButton
 
 @Composable
 fun HomeScreen(
@@ -46,13 +47,14 @@ fun HomeScreen(
             Text("Practice", fontSize = 22.sp)
         }
         Text(
-            if (pianoReady) {
-                setupSummary ?: "Piano is ready."
-            } else {
-                "Ask a grown-up to set up the piano first."
-            },
+            if (pianoReady) setupSummary ?: Copy.READY else Copy.NOT_CALIBRATED,
             style = MaterialTheme.typography.bodyMedium,
         )
-        TextButton(onClick = onGrownUps) { Text("Grown-ups") }
+        HoldButton(
+            label = "Grown-ups",
+            holdLabel = "Keep holding…",
+            textButton = true,
+            onHeld = onGrownUps,
+        )
     }
 }
