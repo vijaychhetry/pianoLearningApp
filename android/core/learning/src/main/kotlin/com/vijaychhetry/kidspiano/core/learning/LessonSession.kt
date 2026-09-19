@@ -82,6 +82,7 @@ class LessonSession(
 
     private var index = 0
     private var judgedMidi: Int? = null
+    private var quietFrames = 0
     private var lastHeardMidi: Int? = null
     private var lastVerdict: Verdict? = null
     private var lastPitch: PitchResult? = null
@@ -115,7 +116,12 @@ class LessonSession(
         if (silence.onFrame(pitch.signalStrength, frame.capturedAtMs)) sourceLooksDead = true
         val phase = debouncer.onFrame(if (pitch.ambiguous) null else pitch.midiNote)
         lastPhase = phase
-        if (phase == NotePhase.IDLE) judgedMidi = null
+        if (pitch.signalStrength < YinHpsPitchDetector.MIN_RMS) {
+            quietFrames++
+            if (quietFrames >= 3) judgedMidi = null
+        } else {
+            quietFrames = 0
+        }
 
         val target = expectedMidi
         if (target == null) {
@@ -143,6 +149,9 @@ class LessonSession(
             val verdict = judge(target, withEvidence, promptShownAtNanos)
             lastVerdict = verdict
             applyVerdict(verdict, target)
+            if (verdict !is Verdict.IgnoredStale && judgedMidi == null) {
+                judgedMidi = target
+            }
         } else if (lastVerdict == null) {
             lastFeedback = if (pitch.signalStrength < YinHpsPitchDetector.MIN_RMS) {
                 Copy.playThis(target)
@@ -169,6 +178,7 @@ class LessonSession(
     fun restart(): LessonSnapshot {
         index = 0
         judgedMidi = null
+        quietFrames = 0
         lastHeardMidi = null
         lastVerdict = null
         lastPitch = null

@@ -2,11 +2,11 @@
 
 Debug build of **Kids Piano**. Not a Play Store release.
 
-**Download (0.5.2 — landscape fits, no scroll):** [KidsPiano-debug-0.5.2.apk](./KidsPiano-debug-0.5.2.apk)
+**Download (0.5.3 — C4 recognition + stacked Practice):** [KidsPiano-debug-0.5.3.apk](./KidsPiano-debug-0.5.3.apk)
 
 On GitHub, open that file and use **Download raw file**. On a phone, you can also use the raw URL for this branch:
 
-https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/spec-v4-050-2211/releases/KidsPiano-debug-0.5.2.apk
+https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/spec-v4-050-2211/releases/KidsPiano-debug-0.5.3.apk
 
 Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug build first if the installer refuses (same package id `com.vijaychhetry.kidspiano`).
 
@@ -32,6 +32,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 
 | Version | Notes |
 | --- | --- |
+| 0.5.3 | Practice is stacked (piano top-center, letter/feedback below) and kept out of the front camera. C4 with a loud 2nd harmonic counts as C4; early TWO_NOTES from piano partials is gone. |
 | 0.5.2 | Landscape Practice is one screen: letter, feedback, and keyboard all fit. No scroll. |
 | 0.5.1 | Practice (and later games) lock to landscape so the keyboard no longer overlaps. Home, Setup, Calibrate, Files, and Audio Lab stay portrait. |
 | 0.5.0 | Spec v4 “Trust the ears”: on-screen keyboard (mini-map + zoom), hearable-key dropdown, exportable calibration + session log, Setup + stickers, times-table gate with 2 s hold, hop-512 capture. Level ladder and falling game are **not** in this APK. |

@@ -29,11 +29,13 @@ class PressTracker(
     private var onsetNanos = 0L
     private var peakDb = -90.0
     private var agreeCount = 0
+    private var ambiguousCount = 0
     private var candidateMidi: Int? = null
     private var candidateHz: Double? = null
     private var candidateConf = 0.0
     private var candidateClarity = 0.0
     private var emitted = false
+    private var dipped = false
     private var lastPitch: PitchResult? = null
 
     fun lastPitch(): PitchResult? = lastPitch
@@ -47,7 +49,7 @@ class PressTracker(
         lastPitch = pitch
         val nowNanos = frame.capturedAtMs * 1_000_000L
 
-        if (hop.onset && (phase == Phase.IDLE || phase == Phase.HELD)) {
+        if (hop.onset && (phase == Phase.IDLE || (phase == Phase.HELD && dipped))) {
             startAttack(nowNanos, hop.rmsDb)
         }
 
@@ -55,7 +57,11 @@ class PressTracker(
             Phase.IDLE -> null
             Phase.ATTACK -> onAttack(frame, hop, pitch, nowNanos)
             Phase.HELD -> {
-                if (hop.rmsDb <= peakDb - releaseBelowPeakDb) resetToIdle()
+                if (hop.rmsDb <= peakDb - releaseBelowPeakDb) {
+                    resetToIdle()
+                } else if (hop.rmsDb <= peakDb - 8.0) {
+                    dipped = true
+                }
                 null
             }
         }
@@ -72,11 +78,13 @@ class PressTracker(
         onsetNanos = nowNanos
         peakDb = rmsDb
         agreeCount = 0
+        ambiguousCount = 0
         candidateMidi = null
         candidateHz = null
         candidateConf = 0.0
         candidateClarity = 0.0
         emitted = false
+        dipped = false
     }
 
     private fun onAttack(
@@ -105,16 +113,22 @@ class PressTracker(
         }
         if (elapsedMs < Config.ATTACK_SKIP_MS) return null
         if (pitch.ambiguous) {
-            return emit(PressKind.TWO_NOTES, frame, nowNanos, pitch, hop)
+            ambiguousCount++
+            if (ambiguousCount >= agreeFrames && elapsedMs >= 120) {
+                return emit(PressKind.TWO_NOTES, frame, nowNanos, pitch, hop)
+            }
+            return null
         }
+        ambiguousCount = 0
         val midi = pitch.midiNote
         val hz = pitch.frequency
         if (midi == null || hz == null || pitch.clarity < minClarity) return null
-        if (candidateMidi == midi) {
+        val (foldedMidi, foldedHz) = foldOctave(frame.samples, frame.sampleRate, midi, hz)
+        if (candidateMidi == foldedMidi) {
             agreeCount++
         } else {
-            candidateMidi = midi
-            candidateHz = hz
+            candidateMidi = foldedMidi
+            candidateHz = foldedHz
             candidateConf = pitch.confidence
             candidateClarity = pitch.clarity
             agreeCount = 1
@@ -133,9 +147,17 @@ class PressTracker(
         hop: OnsetDetector.Result,
     ): PressEvent {
         emitted = true
-        phase = if (kind == PressKind.NOTE) Phase.HELD else Phase.IDLE
-        val midi = if (kind == PressKind.NOTE) candidateMidi ?: pitch.midiNote else pitch.midiNote
-        val hz = if (kind == PressKind.NOTE) candidateHz ?: pitch.frequency else pitch.frequency
+        phase = when (kind) {
+            PressKind.NOTE, PressKind.TWO_NOTES, PressKind.LOW_CONFIDENCE, PressKind.NOISY -> Phase.HELD
+            else -> Phase.IDLE
+        }
+        val rawMidi = if (kind == PressKind.NOTE) candidateMidi ?: pitch.midiNote else pitch.midiNote
+        val rawHz = if (kind == PressKind.NOTE) candidateHz ?: pitch.frequency else pitch.frequency
+        val (midi, hz) = if (rawMidi != null && rawHz != null) {
+            foldOctave(frame.samples, frame.sampleRate, rawMidi, rawHz)
+        } else {
+            rawMidi to rawHz
+        }
         val cents = if (hz != null && midi != null) centsOff(hz, midi) else null
         return PressEvent(
             onsetNanos = onsetNanos,
@@ -169,11 +191,36 @@ class PressTracker(
         return if (samples.size > n) samples.copyOfRange(samples.size - n, samples.size) else samples
     }
 
+    private fun foldOctave(
+        samples: FloatArray,
+        sampleRate: Int,
+        midi: Int,
+        hz: Double,
+    ): Pair<Int, Double> {
+        var m = midi
+        var f = hz
+        repeat(2) {
+            val lower = m - 12
+            if (lower < 36) return m to f
+            val lowDb = goertzelDb(samples, sampleRate, midiToFreq(lower))
+            val highDb = goertzelDb(samples, sampleRate, midiToFreq(m))
+            if (lowDb >= highDb - 14.0) {
+                m = lower
+                f /= 2.0
+            } else {
+                return m to f
+            }
+        }
+        return m to f
+    }
+
     private fun resetToIdle() {
         phase = Phase.IDLE
         agreeCount = 0
+        ambiguousCount = 0
         candidateMidi = null
         emitted = false
+        dipped = false
     }
 }
 

@@ -1,5 +1,6 @@
 package com.vijaychhetry.kidspiano
 
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -8,6 +9,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,6 +57,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes = window.attributes.apply {
+                layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER
+            }
+        }
         setContent {
             MaterialTheme(colorScheme = kidsScheme) {
                 KidsPianoApp()
@@ -95,7 +104,7 @@ private fun KidsPianoApp() {
         }
     }
 
-    Scaffold { padding ->
+    Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { padding ->
         Column(
             Modifier
                 .fillMaxSize()

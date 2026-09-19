@@ -47,9 +47,12 @@ private fun judgeNote(
         val ev = press.octaveEvidence
             ?: return Verdict.Unclear(UnclearReason.OCTAVE_UNSURE, press)
         val delta = ev.detectedFundamentalDb - ev.expectedFundamentalDb
+        val unit = Config.OCTAVE_FUNDAMENTAL_DB
+        val rescueDb = octaveFundamentalDb * (Config.OCTAVE_RESCUE_DB / unit)
+        val wrongDb = octaveFundamentalDb * (Config.OCTAVE_WRONG_DB / unit)
         return when {
-            delta <= octaveFundamentalDb -> Verdict.Correct(press)
-            delta >= octaveFundamentalDb * 2 -> Verdict.WrongOctave(heard, press)
+            delta <= rescueDb -> Verdict.Correct(press)
+            delta >= wrongDb -> Verdict.WrongOctave(heard, press)
             else -> Verdict.Unclear(UnclearReason.OCTAVE_UNSURE, press)
         }
     }

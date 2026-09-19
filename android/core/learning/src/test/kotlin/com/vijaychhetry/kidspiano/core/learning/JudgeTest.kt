@@ -45,7 +45,7 @@ class JudgeTest {
             UnclearReason.OCTAVE_UNSURE -> PressKind.NOTE
         }
         val event = if (reason == UnclearReason.OCTAVE_UNSURE) {
-            press(midi = 72, evidence = OctaveEvidence(-20.0, -12.0))
+            press(midi = 72, evidence = OctaveEvidence(-34.0, -12.0))
         } else {
             press(kind = kind)
         }
@@ -94,5 +94,15 @@ class JudgeTest {
         val wrong = judge(60, press(midi = 64), 0)
         assertTrue(wrong is Verdict.WrongKey)
         assertEquals(64, (wrong as Verdict.WrongKey).heardMidi)
+    }
+
+    @Test
+    fun acR13_secondHarmonicLouderThanFundamentalIsStillCorrect() {
+        val rescued = press(
+            midi = 72,
+            evidence = OctaveEvidence(expectedFundamentalDb = -18.0, detectedFundamentalDb = -6.0),
+        )
+        val v = judge(60, rescued, 0)
+        assertTrue(v is Verdict.Correct, "C4 whose 2nd harmonic dominates at the mic is still C4; got $v")
     }
 }

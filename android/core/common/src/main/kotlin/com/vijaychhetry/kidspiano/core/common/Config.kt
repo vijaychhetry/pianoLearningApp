@@ -12,7 +12,7 @@ object Config {
     const val ONSET_RISE_DB = 6.0
     const val ONSET_MIN_ABOVE_FLOOR_DB = 12.0
     const val MIN_ONSET_GAP_MS = 150
-    const val ATTACK_SKIP_MS = 20
+    const val ATTACK_SKIP_MS = 60
 
     const val F_MIN = 120.0
     const val F_MAX = 1100.0
@@ -22,6 +22,8 @@ object Config {
     const val CLASSIFY_MAX_CENTS = 50.0
     const val TWO_NOTE_SALIENCE_DB = 10.0
     const val OCTAVE_FUNDAMENTAL_DB = 6.0
+    const val OCTAVE_RESCUE_DB = 18.0
+    const val OCTAVE_WRONG_DB = 28.0
 
     const val RELEASE_BELOW_PEAK_DB = 20.0
     const val PRESS_TIMEOUT_MS = 350

@@ -97,32 +97,90 @@ internal fun isPolyphonic(
         val f = hz(peaks[k].first)
         val m = peaks[k].second
         if (m < m0 * relativePeak) continue
-        val ratio = maxOf(f, f0) / minOf(f, f0)
-        val nearest = Math.round(ratio).toDouble()
-        val harmonic = nearest >= 2.0 && nearest <= 8.0 && kotlin.math.abs(ratio - nearest) < 0.10
         val cents = 1200.0 * kotlin.math.abs(Math.log(f / f0) / Math.log(2.0))
-        if (!harmonic && cents > minSeparationCents) return true
+        if (!sameHarmonicSeries(f, f0, spec, maxMag, minFreq) && cents > minSeparationCents) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
+ * 2f vs 3f is a fifth (3:2), not an integer multiple of the louder peak.
+ * That is still one piano note if a shared fundamental has energy.
+ * C4+E4 (5:4 of a sub-audio C2) must stay polyphonic.
+ */
+internal fun sameHarmonicSeries(
+    a: Double,
+    b: Double,
+    spec: Spectrum,
+    maxMag: Double,
+    minFreq: Double,
+): Boolean {
+    val ratio = maxOf(a, b) / minOf(a, b)
+    val nearest = Math.round(ratio).toDouble()
+    if (nearest >= 2.0 && nearest <= 8.0 && kotlin.math.abs(ratio - nearest) < 0.10) return true
+    for (n1 in 1..8) {
+        for (n2 in 1..8) {
+            if (n1 == n2) continue
+            val fundA = a / n1
+            val fundB = b / n2
+            if (fundA < minFreq - 8.0 || fundB < minFreq - 8.0) continue
+            val cents = 1200.0 * kotlin.math.abs(Math.log(fundA / fundB) / Math.log(2.0))
+            if (cents > 35.0) continue
+            val fund = (fundA + fundB) / 2.0
+            if (magAt(spec, fund) >= maxMag * 0.12) return true
+        }
     }
     return false
 }
 
 internal fun resolveOctave(yinHz: Double, hpsHz: Double?, spec: Spectrum?): Double {
-    if (hpsHz == null || !hpsHz.isFinite() || yinHz <= 0) return yinHz
-    val ratio = yinHz / hpsHz
-    if (ratio in 0.94..1.06) return yinHz
-    val octaveHigh = ratio in 1.87..2.14
-    if (!octaveHigh) return yinHz
-    if (spec == null) return hpsHz
-    val low = magAt(spec, hpsHz)
-    val high = magAt(spec, yinHz)
-    if (high <= 0) return hpsHz
-    return if (low >= high * 0.22) hpsHz else yinHz
+    var chosen = yinHz
+    if (hpsHz != null && hpsHz.isFinite() && yinHz > 0) {
+        val ratio = yinHz / hpsHz
+        chosen = when {
+            ratio in 0.94..1.06 -> yinHz
+            ratio in 1.87..2.14 -> {
+                if (spec == null) {
+                    hpsHz
+                } else {
+                    val low = magAt(spec, hpsHz)
+                    val high = magAt(spec, yinHz)
+                    if (high <= 0 || low >= high * 0.22) hpsHz else yinHz
+                }
+            }
+            else -> yinHz
+        }
+    }
+    return if (spec == null) chosen else foldSubharmonics(chosen, spec)
+}
+
+/**
+ * YIN and HPS often agree on 2f when a piano's 2nd partial is louder than
+ * the fundamental (C4 read as C5). Fold down while a true subharmonic bin
+ * still has energy. A pure sine has none, so A4 stays A4.
+ */
+internal fun foldSubharmonics(hz: Double, spec: Spectrum): Double {
+    val high = magAt(spec, hz)
+    if (high <= 0.0) return hz
+    var best = hz
+    for (div in 2..4) {
+        val lower = hz / div
+        if (lower < YinHpsPitchDetector.MIN_FREQ_HZ) continue
+        val low = magAt(spec, lower)
+        if (low >= high * 0.18) best = lower
+    }
+    return best
 }
 
 private fun magAt(spec: Spectrum, freq: Double): Double {
     val bin = Math.round(freq * spec.n / spec.sampleRate).toInt()
     if (bin <= 0 || bin >= spec.mag.size) return 0.0
-    return spec.mag[bin]
+    var best = spec.mag[bin]
+    if (bin - 1 > 0) best = maxOf(best, spec.mag[bin - 1])
+    if (bin + 1 < spec.mag.size) best = maxOf(best, spec.mag[bin + 1])
+    return best
 }
 
 private fun nextPow2(n: Int): Int {

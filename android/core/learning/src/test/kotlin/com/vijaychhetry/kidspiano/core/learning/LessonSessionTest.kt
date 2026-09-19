@@ -151,6 +151,19 @@ class LessonSessionTest {
     }
 
     @Test
+    fun acLearn13_secondHarmonicDominantC4AdvancesToD() {
+        val session = LessonSession()
+        session.begin(0)
+        var snap = session.snapshot()
+        repeat(16) { i ->
+            snap = session.onFrame(secondHeavyFrame(60, i))
+        }
+        assertEquals(62, snap.expectedMidi, "got ${snap.expectedMidi} cue=${snap.cue} ${snap.feedback}")
+        assertEquals(LessonCue.YES, snap.cue)
+        assertEquals(1, snap.completedCount)
+    }
+
+    @Test
     fun acLearn08_playAgainAsksForCOnceMore() {
         val session = LessonSession()
         session.begin(0)
@@ -259,6 +272,22 @@ private fun playPress(session: LessonSession, midi: Int, fromFrame: Int): Lesson
 
 private fun frame(hz: Double, index: Int, n: Int = 2048): AudioFrame {
     val tone = pianoTone(hz, SR, 1.0)
+    val start = (2000 + index % 8 * 64).coerceAtMost(tone.size - n)
+    return AudioFrame(tone.copyOfRange(start, start + n), SR, index * FRAME_MS)
+}
+
+private fun secondHeavyFrame(midi: Int, index: Int, n: Int = 2048): AudioFrame {
+    val f = midiToFreq(midi)
+    val samples = (SR * 1.0).toInt()
+    val tone = FloatArray(samples)
+    for (i in tone.indices) {
+        val t = i.toDouble() / SR
+        val attack = minOf(1.0, t / 0.008)
+        val sample = 0.22 * Math.sin(2 * Math.PI * f * t) +
+            1.00 * Math.sin(2 * Math.PI * 2 * f * t) +
+            0.35 * Math.sin(2 * Math.PI * 3 * f * t)
+        tone[i] = (0.28 * attack * sample).toFloat()
+    }
     val start = (2000 + index % 8 * 64).coerceAtMost(tone.size - n)
     return AudioFrame(tone.copyOfRange(start, start + n), SR, index * FRAME_MS)
 }
