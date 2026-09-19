@@ -21,19 +21,23 @@ Phase 3 start: **Level 1 Find this key** (C D E F G) for the child.
 
 ## Download APK (no Android Studio)
 
-A debug APK is in [`releases/KidsPiano-debug-0.4.0.apk`](../releases/KidsPiano-debug-0.4.0.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+A debug APK is in [`releases/KidsPiano-debug-0.5.0.apk`](../releases/KidsPiano-debug-0.5.0.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
 
-If 0.4.0 is not in the folder yet, the previous lab build is still at [`releases/KidsPianoLab-debug-0.3.0.apk`](../releases/KidsPianoLab-debug-0.3.0.apk).
+If 0.5.0 is not in the folder yet, the previous child build is still at [`releases/KidsPiano-debug-0.4.0.apk`](../releases/KidsPiano-debug-0.4.0.apk).
 
 ## What the child sees
 
-**Home** — **Practice** (C D E F G, one key at a time) once a grown-up has calibrated. **Grown-ups** sits behind a small math question.
+**Home** — **Practice** (C4–G4, one key at a time) once a grown-up has calibrated. **Grown-ups** is a 2-second hold plus a times-table.
 
-**Practice** — big letter, play that key on the Yamaha, then Yes / Try C / I couldn't hear that. Never marks a guess as wrong. Checkmark, retry, and question-mark cues sit next to the colour so the result is not colour-only.
+**Practice** — big note name, two-layer keyboard (61-key mini-map + zoom), play that key on the Yamaha. Copy names the octave (`C4`, `E4`). Unclear / two notes / too quiet is never marked wrong. Colour is never the only signal.
 
 ## Grown-up tools (unchanged job)
 
-**Calibrate** — setup. Five keys, four separate presses each. A weak profile is not saved as the default.
+**Setup** — room checklist and sticker colours for C4–G4.
+
+**Calibrate** — five keys, four separate presses each. Key dropdown (A2–F6 whites). A weak profile is not saved as the default.
+
+**Files** — share calibration JSON and the session log. No recordings.
 
 **Audio Lab** — engineering readout (spec §15). Not a lesson.
 
@@ -50,7 +54,7 @@ If 0.4.0 is not in the folder yet, the previous lab build is still at [`releases
 ```bash
 cd android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
-./gradlew :core:notes:test :core:pitch:test :core:calibration:test :core:learning:test
+./gradlew :core:notes:test :core:pitch:test :core:calibration:test :core:learning:test :core:diagnostics:test
 ./gradlew :app:installDebug
 ```
 

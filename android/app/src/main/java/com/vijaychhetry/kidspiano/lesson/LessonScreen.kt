@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -24,7 +28,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,7 +43,10 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
+import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
+import com.vijaychhetry.kidspiano.core.notes.lessonSets
+import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
 fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
@@ -47,8 +56,11 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) model.start() }
+    var setOpen by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { model.useProfile(store.load()) }
+    LaunchedEffect(Unit) {
+        model.useProfile(store.load(), store.lessonMidi())
+    }
     LaunchedEffect(state.ready) {
         if (!state.ready || state.running || state.complete) return@LaunchedEffect
         val granted = ContextCompat.checkSelfPermission(
@@ -61,6 +73,7 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -74,11 +87,27 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
 
         if (!state.ready) {
             Text(
-                "Ask a grown-up to set up the piano first.",
+                Copy.NOT_CALIBRATED,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
             return@Column
+        }
+
+        Box(Modifier.align(Alignment.Start)) {
+            TextButton(onClick = { setOpen = true }) { Text(state.lessonSetLabel) }
+            DropdownMenu(expanded = setOpen, onDismissRequest = { setOpen = false }) {
+                lessonSets().forEach { (label, notes) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            setOpen = false
+                            store.saveLessonMidi(notes)
+                            model.useProfile(store.load(), notes)
+                        },
+                    )
+                }
+            }
         }
 
         Text(
@@ -86,10 +115,15 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             style = MaterialTheme.typography.titleMedium,
         )
         Text(
-            if (state.complete) "★" else state.letter,
-            fontSize = 96.sp,
+            if (state.complete) "★" else state.noteName,
+            fontSize = 56.sp,
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.primary,
+        )
+        PianoKeyboardView(
+            highlightMidi = state.expectedMidi,
+            heardMidi = state.heardMidi,
+            modifier = Modifier.fillMaxWidth(),
         )
         CueBadge(state.cue)
         Text(
@@ -97,6 +131,9 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
         )
+        state.line2?.let {
+            Text(it, style = MaterialTheme.typography.titleMedium)
+        }
         Text(
             if (state.complete) "All five keys" else "${state.completedCount} of ${state.total}",
             style = MaterialTheme.typography.bodyMedium,

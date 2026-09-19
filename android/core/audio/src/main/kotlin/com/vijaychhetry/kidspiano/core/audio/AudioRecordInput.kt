@@ -6,6 +6,7 @@ import android.media.MediaRecorder
 import android.os.Process
 import com.vijaychhetry.kidspiano.core.common.AudioFrame
 import com.vijaychhetry.kidspiano.core.common.AudioInput
+import com.vijaychhetry.kidspiano.core.common.Config
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,8 +29,9 @@ import kotlin.concurrent.thread
  * main thread.
  */
 class AudioRecordInput(
-    private val requestedSampleRate: Int = 44100,
-    private val frameSize: Int = 2048,
+    private val requestedSampleRate: Int? = null,
+    private val frameSize: Int = Config.WINDOW,
+    private val hopSize: Int = Config.HOP,
 ) : AudioInput {
     private val frames = MutableSharedFlow<AudioFrame>(
         extraBufferCapacity = 4,
@@ -43,7 +45,7 @@ class AudioRecordInput(
 
     var appliedSource: Int = MediaRecorder.AudioSource.MIC
         private set
-    var appliedSampleRate: Int = requestedSampleRate
+    var appliedSampleRate: Int = requestedSampleRate ?: Config.preferredRates.first()
         private set
 
     override fun audioFrames(): Flow<AudioFrame> = frames
@@ -69,21 +71,28 @@ class AudioRecordInput(
         val rate = appliedSampleRate
         worker = thread(name = "piano-audio", isDaemon = true) {
             Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
-            val shortBuf = ShortArray(frameSize)
-            val floatBuf = FloatArray(frameSize)
+            val hopShort = ShortArray(hopSize)
+            val window = FloatArray(frameSize)
+            var filled = 0
             try {
                 while (running) {
-                    val read = started.read(shortBuf, 0, shortBuf.size)
+                    val read = started.read(hopShort, 0, hopShort.size)
                     if (read <= 0) continue
-                    for (i in 0 until read) {
-                        floatBuf[i] = shortBuf[i] / 32768f
+                    val incoming = FloatArray(hopSize) { i ->
+                        if (i < read) hopShort[i] / 32768f else 0f
                     }
-                    if (read < frameSize) {
-                        for (i in read until frameSize) floatBuf[i] = 0f
+                    if (filled < frameSize) {
+                        val copy = minOf(hopSize, frameSize - filled)
+                        System.arraycopy(incoming, 0, window, filled, copy)
+                        filled += copy
+                        if (filled < frameSize) continue
+                    } else {
+                        System.arraycopy(window, hopSize, window, 0, frameSize - hopSize)
+                        System.arraycopy(incoming, 0, window, frameSize - hopSize, hopSize)
                     }
                     frames.tryEmit(
                         AudioFrame(
-                            samples = floatBuf.copyOf(),
+                            samples = window.copyOf(),
                             sampleRate = rate,
                             capturedAtMs = System.currentTimeMillis(),
                         ),
@@ -112,30 +121,34 @@ class AudioRecordInput(
 
     private fun openRecorder(preferredSource: Int?): AudioRecord {
         val sources = if (preferredSource != null) listOf(preferredSource) else SOURCE_ORDER
-        val min = AudioRecord.getMinBufferSize(
-            requestedSampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-        )
-        val buf = maxOf(min * 2, frameSize * 4)
+        val rates = requestedSampleRate?.let { listOf(it) } ?: Config.preferredRates
         var lastError: Exception? = null
-        for (source in sources) {
-            try {
-                val rec = AudioRecord(
-                    source,
-                    requestedSampleRate,
-                    AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT,
-                    buf,
-                )
-                if (rec.state == AudioRecord.STATE_INITIALIZED) {
-                    appliedSource = source
-                    appliedSampleRate = rec.sampleRate
-                    return rec
+        for (rate in rates) {
+            val min = AudioRecord.getMinBufferSize(
+                rate,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+            )
+            if (min <= 0) continue
+            val buf = maxOf(min * 2, frameSize * 4)
+            for (source in sources) {
+                try {
+                    val rec = AudioRecord(
+                        source,
+                        rate,
+                        AudioFormat.CHANNEL_IN_MONO,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        buf,
+                    )
+                    if (rec.state == AudioRecord.STATE_INITIALIZED) {
+                        appliedSource = source
+                        appliedSampleRate = rec.sampleRate
+                        return rec
+                    }
+                    rec.release()
+                } catch (e: Exception) {
+                    lastError = e
                 }
-                rec.release()
-            } catch (e: Exception) {
-                lastError = e
             }
         }
         throw IllegalStateException("Could not open the microphone", lastError)

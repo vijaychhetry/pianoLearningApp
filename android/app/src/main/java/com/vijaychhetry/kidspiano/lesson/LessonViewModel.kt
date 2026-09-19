@@ -1,16 +1,24 @@
 package com.vijaychhetry.kidspiano.lesson
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.vijaychhetry.kidspiano.BuildConfig
 import com.vijaychhetry.kidspiano.core.audio.AudioRecordInput
 import com.vijaychhetry.kidspiano.core.calibration.CalibrationProfile
+import com.vijaychhetry.kidspiano.core.common.Config
 import com.vijaychhetry.kidspiano.core.common.RecognitionStatus
+import com.vijaychhetry.kidspiano.core.diagnostics.SessionLogLine
+import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
 import com.vijaychhetry.kidspiano.core.learning.LessonSession
 import com.vijaychhetry.kidspiano.core.learning.LessonSnapshot
 import com.vijaychhetry.kidspiano.core.learning.lessonMayStart
 import com.vijaychhetry.kidspiano.core.learning.lessonSessionFor
+import com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi
+import com.vijaychhetry.kidspiano.core.notes.lessonSets
 import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
+import com.vijaychhetry.kidspiano.export.SessionLogStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,13 +49,22 @@ data class LessonUiState(
     val level: Double = 0.0,
     val complete: Boolean = false,
     val sourceLabel: String = "—",
+    val expectedMidi: Int? = 60,
+    val heardMidi: Int? = null,
+    val line2: String? = null,
+    val lessonSetLabel: String = "C4–G4 (first)",
 )
 
-class LessonViewModel : ViewModel() {
+class LessonViewModel(app: Application) : AndroidViewModel(app) {
     private val input = AudioRecordInput()
     private val sources = MicSourceCycler(AudioRecordInput.SOURCE_ORDER)
+    private val logStore = SessionLogStore(app)
     private val control = Mutex()
     private var session: LessonSession? = null
+    private var notes: List<Int> = defaultLessonMidi()
+    private var lastLoggedOnset: Long? = null
+    private var lastHeardMs = 0L
+    private var sessionId: String = "s-${System.currentTimeMillis()}"
     private var collectJob: Job? = null
     private var tickJob: Job? = null
     private var wantRunning = false
@@ -55,14 +72,17 @@ class LessonViewModel : ViewModel() {
     private val _state = MutableStateFlow(LessonUiState())
     val state: StateFlow<LessonUiState> = _state
 
-    fun useProfile(profile: CalibrationProfile?) {
+    fun useProfile(profile: CalibrationProfile?, lessonNotes: List<Int> = defaultLessonMidi()) {
+        notes = lessonNotes
         if (!lessonMayStart(profile) || profile == null) {
             session = null
             _state.value = LessonUiState()
             return
         }
-        val next = lessonSessionFor(profile)
+        val next = lessonSessionFor(profile, notes)
         session = next
+        sessionId = "s-${System.currentTimeMillis()}"
+        lastLoggedOnset = null
         _state.value = next.snapshot().toUi(ready = true, running = false)
     }
 
@@ -141,8 +161,15 @@ class LessonViewModel : ViewModel() {
                 delay(TICK_MS)
                 if (!wantRunning) continue
                 control.withLock {
-                    session?.onTick(System.currentTimeMillis())?.let { publish(it, running = true) }
+                    val now = System.currentTimeMillis()
+                    session?.onTick(now)?.let { publish(it, running = true) }
                     if (session?.sourceLooksDead == true) rotateAfterSilence()
+                    if (lastHeardMs > 0L && now - lastHeardMs > Config.MIC_RELEASE_MS) {
+                        wantRunning = false
+                        stopTicker()
+                        endCapture()
+                        _state.update { it.copy(running = false, feedback = Copy.MIC_PAUSED) }
+                    }
                 }
             }
         }
@@ -172,7 +199,8 @@ class LessonViewModel : ViewModel() {
                 }
             }
         }
-        active.begin(System.currentTimeMillis())
+        lastHeardMs = System.currentTimeMillis()
+        active.begin(lastHeardMs)
         _state.update {
             it.copy(
                 running = true,
@@ -184,7 +212,11 @@ class LessonViewModel : ViewModel() {
         collectJob = viewModelScope.launch {
             input.audioFrames().collect { frame ->
                 val snapshot = active.onFrame(frame)
-                if (snapshot.level > HEALTHY_RMS) sources.reset()
+                if (snapshot.level > HEALTHY_RMS) {
+                    sources.reset()
+                    lastHeardMs = System.currentTimeMillis()
+                }
+                logIfNeeded(snapshot)
                 publish(snapshot, running = true)
             }
         }
@@ -238,7 +270,38 @@ class LessonViewModel : ViewModel() {
         level = level,
         complete = complete,
         sourceLabel = _state.value.sourceLabel,
+        expectedMidi = expectedMidi,
+        heardMidi = heardMidi,
+        line2 = line2,
+        lessonSetLabel = lessonSets().firstOrNull { it.second == notes }?.first
+            ?: "C4–G4 (first)",
     )
+
+    private fun logIfNeeded(snapshot: LessonSnapshot) {
+        val verdict = snapshot.verdict ?: return
+        val onset = verdict.press?.onsetNanos
+        if (onset != null && onset == lastLoggedOnset) return
+        if (onset == null && lastLoggedOnset == Long.MIN_VALUE) return
+        lastLoggedOnset = onset ?: Long.MIN_VALUE
+        viewModelScope.launch(Dispatchers.IO) {
+            logStore.append(
+                SessionLogLine(
+                    ts = System.currentTimeMillis(),
+                    sessionId = sessionId,
+                    appVersion = BuildConfig.VERSION_NAME,
+                    activity = "learn",
+                    levelId = 1,
+                    promptIndex = snapshot.completedCount,
+                    expectedMidi = if (verdict is com.vijaychhetry.kidspiano.core.common.Verdict.Correct) {
+                        notes.getOrNull(snapshot.completedCount - 1) ?: snapshot.expectedMidi
+                    } else {
+                        snapshot.expectedMidi
+                    },
+                    verdict = verdict,
+                ),
+            )
+        }
+    }
 
     private companion object {
         const val TICK_MS = 250L

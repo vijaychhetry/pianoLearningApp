@@ -33,7 +33,17 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
+import com.vijaychhetry.kidspiano.core.notes.selectableMidi
 import com.vijaychhetry.kidspiano.core.pitch.levelFraction
+import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 @Composable
 fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
@@ -54,9 +64,12 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
         }
     }
 
+    var keyOpen by remember { mutableStateOf(false) }
+
     Column(
         Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -70,13 +83,34 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
         if (profile == null) {
             Text("Play this key", style = MaterialTheme.typography.titleMedium)
             Text(
-                state.askLetter,
-                style = MaterialTheme.typography.displayLarge,
+                state.askNoteName,
+                style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 "${state.askNoteName} · sample ${state.samplesDone} of ${state.samplesNeeded}",
                 style = MaterialTheme.typography.bodyMedium,
+            )
+            Box {
+                OutlinedButton(
+                    onClick = { if (state.profile == null) keyOpen = true },
+                    enabled = state.profile == null,
+                ) { Text("Key: ${state.askNoteName}") }
+                DropdownMenu(expanded = keyOpen, onDismissRequest = { keyOpen = false }) {
+                    selectableMidi().forEach { midi ->
+                        DropdownMenuItem(
+                            text = { Text(midiToNoteName(midi)) },
+                            onClick = {
+                                keyOpen = false
+                                model.jumpTo(midi)
+                            },
+                        )
+                    }
+                }
+            }
+            PianoKeyboardView(
+                highlightMidi = state.askMidi ?: 60,
+                modifier = Modifier.fillMaxWidth(),
             )
         } else {
             Text("Calibration result", style = MaterialTheme.typography.titleMedium)

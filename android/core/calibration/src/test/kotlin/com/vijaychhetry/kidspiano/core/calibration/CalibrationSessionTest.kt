@@ -152,6 +152,20 @@ class CalibrationSessionTest {
         assertEquals(CalibrationSession.Offer.ACCEPTED, session.offer(60, midiToFreq(60), 0.9))
         assertEquals(1, session.acceptedCount(60))
     }
+
+    @Test
+    fun acCalJump01_jumpingToASampledKeyClearsItAndDoesNotMixOldReadings() {
+        val session = CalibrationSession(samplesPerNote = 2)
+        session.press(60, midiToFreq(60))
+        session.press(60, midiToFreq(60))
+        assertEquals(62, session.currentMidi)
+        session.jumpTo(60)
+        assertEquals(60, session.currentMidi)
+        assertEquals(0, session.acceptedCount(60))
+        session.jumpTo(64)
+        assertEquals(64, session.currentMidi)
+        assertTrue(64 in session.notes)
+    }
 }
 
 /** One press: the key was up, then struck. */

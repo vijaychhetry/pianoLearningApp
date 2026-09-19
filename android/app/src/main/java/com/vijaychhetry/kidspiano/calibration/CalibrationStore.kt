@@ -43,6 +43,16 @@ class CalibrationStore(context: Context) {
         return "Saved profile: $quality · $count notes · $source"
     }
 
+    fun lessonMidi(): List<Int> {
+        val raw = prefs.getString(KEY_LESSON, null) ?: return com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi()
+        val parsed = raw.split(',').mapNotNull { it.toIntOrNull() }
+        return parsed.ifEmpty { com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi() }
+    }
+
+    fun saveLessonMidi(notes: List<Int>) {
+        prefs.edit().putString(KEY_LESSON, notes.joinToString(",")).apply()
+    }
+
     fun clear() = prefs.edit().clear().apply()
 
     private companion object {
@@ -51,5 +61,6 @@ class CalibrationStore(context: Context) {
         const val KEY_SOURCE = "source"
         const val KEY_SAMPLE_RATE = "sampleRate"
         const val KEY_SAVED_AT = "savedAt"
+        const val KEY_LESSON = "lessonMidi"
     }
 }

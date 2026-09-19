@@ -1,6 +1,8 @@
 package com.vijaychhetry.kidspiano.core.calibration
 
 import com.vijaychhetry.kidspiano.core.notes.centsOff
+import com.vijaychhetry.kidspiano.core.notes.hearable
+import com.vijaychhetry.kidspiano.core.notes.isWhiteKey
 import kotlin.math.abs
 
 /**
@@ -15,21 +17,23 @@ import kotlin.math.abs
  * the same note is accepted.
  */
 class CalibrationSession(
-    val notes: List<Int> = MVP_CALIBRATION_MIDI,
+    notes: List<Int> = MVP_CALIBRATION_MIDI,
     val samplesPerNote: Int = 4,
     private val maxCentsFromExpected: Double = 45.0,
     private val minConfidence: Double = 0.6,
 ) {
     enum class Offer { ACCEPTED, WRONG_KEY, UNCLEAR, SAME_PRESS, DONE }
 
+    private val noteOrder = notes.toMutableList()
+    val notes: List<Int> get() = noteOrder
     private val accepted = LinkedHashMap<Int, MutableList<Double>>()
     private var index = 0
     private var sampledThisPress = false
 
     /** The key the child is being asked to play, or null when finished. */
-    val currentMidi: Int? get() = notes.getOrNull(index)
+    val currentMidi: Int? get() = noteOrder.getOrNull(index)
 
-    val isComplete: Boolean get() = index >= notes.size
+    val isComplete: Boolean get() = index >= noteOrder.size
 
     fun acceptedCount(midi: Int): Int = accepted[midi]?.size ?: 0
 
@@ -74,6 +78,22 @@ class CalibrationSession(
         accepted.clear()
         index = 0
         sampledThisPress = false
+    }
+
+    /**
+     * Jump the dropdown to [midi]. Hearable white keys only. Re-measuring
+     * a sampled key clears its samples (spec v4 §4.6).
+     */
+    fun jumpTo(midi: Int): Boolean {
+        if (!isWhiteKey(midi) || !hearable(midi)) return false
+        if (midi !in noteOrder) {
+            val insert = noteOrder.indexOfFirst { it > midi }.let { if (it < 0) noteOrder.size else it }
+            noteOrder.add(insert, midi)
+        }
+        accepted.remove(midi)
+        index = noteOrder.indexOf(midi)
+        sampledThisPress = false
+        return true
     }
 
     fun samplesByMidi(): Map<Int, List<Double>> = accepted.mapValues { it.value.toList() }

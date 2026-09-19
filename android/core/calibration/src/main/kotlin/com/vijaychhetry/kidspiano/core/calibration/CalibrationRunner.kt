@@ -1,6 +1,7 @@
 package com.vijaychhetry.kidspiano.core.calibration
 
 import com.vijaychhetry.kidspiano.core.common.AudioFrame
+import com.vijaychhetry.kidspiano.core.notes.letterOf as noteLetter
 import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
 import com.vijaychhetry.kidspiano.core.pitch.DefaultNoteRecognizer
 import com.vijaychhetry.kidspiano.core.pitch.FrameArrivalMonitor
@@ -109,6 +110,15 @@ class CalibrationRunner(
         return snapshot("This microphone is not sending any audio.")
     }
 
+    fun jumpTo(midi: Int): Snapshot {
+        if (profile != null) return snapshot()
+        debouncer.reset()
+        session.onRelease()
+        session.jumpTo(midi)
+        val target = session.currentMidi
+        return snapshot(target?.let { "Now play ${letterOf(it)}." } ?: "Finished.")
+    }
+
     fun skip(): Snapshot {
         session.skipCurrent()
         finishIfComplete()
@@ -153,6 +163,5 @@ class CalibrationRunner(
         }
     }
 
-    private fun letterOf(midi: Int?): String =
-        midi?.let { midiToNoteName(it).dropLast(1) } ?: "—"
+    private fun letterOf(midi: Int?): String = midi?.let { noteLetter(it) } ?: "—"
 }

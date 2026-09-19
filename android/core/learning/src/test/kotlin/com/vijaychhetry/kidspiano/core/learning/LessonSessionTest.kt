@@ -32,7 +32,7 @@ class LessonSessionTest {
         assertEquals("C", snap.letter)
         assertEquals("C4", snap.noteName)
         assertEquals(LessonCue.LISTEN, snap.cue)
-        assertTrue(snap.feedback.contains("Play the C key"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
         assertFalse(snap.complete)
     }
@@ -45,7 +45,8 @@ class LessonSessionTest {
         assertEquals(60, snap.expectedMidi)
         assertEquals(LessonCue.TRY, snap.cue)
         assertEquals(RecognitionStatus.INCORRECT, snap.status)
-        assertTrue(snap.feedback.contains("Try C"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("E4"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
     }
 
@@ -128,7 +129,8 @@ class LessonSessionTest {
         assertEquals(60, snap.expectedMidi)
         assertEquals(RecognitionStatus.CORRECT_OCTAVE_MISMATCH, snap.status)
         assertEquals(LessonCue.OCTAVE, snap.cue)
-        assertTrue(snap.feedback.contains("other C"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C5"), "got: ${snap.feedback}")
+        assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
     }
 
@@ -198,14 +200,21 @@ class LessonPolicyTest {
 
 class ParentGateTest {
     @Test
-    fun acGate01_onlyTheSumOpensGrownUps() {
-        val gate = ParentGate(2, 5)
-        assertEquals("What is 2 + 5?", gate.prompt)
-        assertTrue(gate.accepts("7"))
-        assertTrue(gate.accepts(" 7 "))
-        assertFalse(gate.accepts("6"))
+    fun acR15_gateIsATimesTableInSixToNineAndWrongAnswersDoNotLockOut() {
+        val gate = ParentGate.of(7, 8)
+        assertEquals("What is 7 × 8?", gate.prompt)
+        assertTrue(gate.accepts("56"))
+        assertTrue(gate.accepts(" 56 "))
+        assertFalse(gate.accepts("54"))
         assertFalse(gate.accepts(""))
         assertFalse(gate.accepts("seven"))
+        assertFalse(gate.accepts("15"))
+        repeat(40) {
+            val roll = ParentGate()
+            assertTrue(roll.a in 6..9, "a=${roll.a}")
+            assertTrue(roll.b in 6..9, "b=${roll.b}")
+            assertTrue(roll.accepts((roll.a * roll.b).toString()))
+        }
     }
 }
 
