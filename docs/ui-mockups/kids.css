@@ -120,13 +120,15 @@ h1 { margin: 0; font-size: 26px; letter-spacing: -0.3px; }
   color: #fff; font-weight: 800; font-size: 18px;
   display: grid; place-items: center; box-shadow: 0 5px 12px rgba(30,22,51,0.2);
 }
+/* The line sits well clear of the bottom edge: a tile keeps falling past it,
+   fading, for as long as its hit window stays open. */
 .hitline {
-  position: absolute; left: 0; right: 0; bottom: 26px; height: 5px;
+  position: absolute; left: 0; right: 0; bottom: 62px; height: 5px;
   background: repeating-linear-gradient(90deg, var(--purple) 0 12px, #d9ccf5 12px 24px);
   border-radius: 3px;
 }
 .hitlabel {
-  position: absolute; right: 10px; bottom: 6px; font-size: 12px;
+  position: absolute; right: 10px; bottom: 42px; font-size: 12px;
   color: var(--purple); font-weight: 800;
 }
 .combo { text-align: center; font-size: 17px; font-weight: 800; margin-top: 10px; }

@@ -8,7 +8,7 @@ These screens are the design to implement. They are **not** screenshots of a bui
 - `kids_levelmap.png` — eight stops, stars, locked stops dimmed.
 - `kids_drill.png` — levels 1–6. Hero is the note name in the key's colour; the key the child actually hit is ringed amber.
 - `kids_song.png` — note bubbles with lyric syllables, rhythm-free.
-- `kids_falling.png` — tiles falling to the hit line above the keyboard.
+- `kids_falling.png` — tiles falling to the hit line above the keyboard. Two tiles, not three: a 3 s fall with a 2.5 s gap means only two can share the screen. The lower tile is past the line and fading, because over a third of the hit window lives there.
 - `kids_summary.png` — stars and the song offer.
 
 Shared assets: `kids.css`, `kids-keyboard.js`, `shot-levelmap|drill|song|falling|summary.html`.

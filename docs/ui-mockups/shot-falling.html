@@ -10,7 +10,7 @@
       <span class="back">‹ Map</span>
       <div class="stars" style="font-size:15px">Level 8 · Falling notes</div>
     </div>
-    <div class="combo">★ 5 caught · no misses yet</div>
+    <div class="combo">★ 7 caught</div>
     <div class="field" id="field"></div>
     <div id="kb" style="margin-top:10px"></div>
     <p class="sub" style="text-align:center;margin-top:10px">
@@ -19,11 +19,12 @@
   </div>
   <script src="kids-keyboard.js"></script>
   <script>
-    // progress: 0 = just spawned, 1 = on the hit line
+    // progress: 0 = just spawned, 1 = on the hit line, >1 = past it and fading.
+    // Two tiles, not three: a 3 s fall and a 2.5 s gap means only two can
+    // share the screen, and only for about half a second.
     const TILES = [
-      { midi: 60, lane: 0, p: 0.92 },
-      { midi: 64, lane: 2, p: 0.55 },
-      { midi: 67, lane: 4, p: 0.18 },
+      { midi: 60, lane: 0, p: 1.12, fade: 0.45 },
+      { midi: 64, lane: 2, p: 0.22 },
     ];
     const field = document.getElementById("field");
     const LANES = 5;
@@ -34,11 +35,12 @@
     // `top` is a non-configurable window property, so a const of that name
     // would throw before any of this runs.
     const startY = 8;
-    const lineY = 330 - 26 - 44;
+    const lineY = 330 - 62 - 44;
     TILES.forEach((t) => {
       const y = startY + t.p * (lineY - startY);
       const x = (t.lane + 0.5) * (350 / LANES) - 28;
-      html += `<div class="tile" style="background:${KEY_COLORS[t.midi]};top:${y}px;left:${x}px">
+      const fade = t.fade ? `;opacity:${t.fade}` : "";
+      html += `<div class="tile" style="background:${KEY_COLORS[t.midi]};top:${y}px;left:${x}px${fade}">
         ${noteName(t.midi)}
       </div>`;
     });
