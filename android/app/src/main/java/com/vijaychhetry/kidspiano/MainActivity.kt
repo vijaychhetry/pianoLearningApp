@@ -44,6 +44,7 @@ import com.vijaychhetry.kidspiano.lab.AudioLabScreen
 import com.vijaychhetry.kidspiano.lab.AudioLabViewModel
 import com.vijaychhetry.kidspiano.lesson.LessonScreen
 import com.vijaychhetry.kidspiano.lesson.LessonViewModel
+import com.vijaychhetry.kidspiano.ui.LockScreenOrientation
 
 private enum class Dest { HOME, PRACTICE, GATE, GROWNUPS }
 private enum class GrownUpsTab { SETUP, CALIBRATE, FILES, LAB }
@@ -73,6 +74,8 @@ private fun KidsPianoApp() {
     var homeTick by remember { mutableStateOf(0) }
     val profile = remember(homeTick) { store.load() }
     val pianoReady = lessonMayStart(profile)
+    val playSession = dest == Dest.PRACTICE
+    LockScreenOrientation(landscape = playSession)
 
     BackHandler(enabled = dest != Dest.HOME) {
         when (dest) {

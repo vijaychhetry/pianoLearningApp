@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vijaychhetry.kidspiano.core.notes.FIVE_KEYS
@@ -48,6 +50,7 @@ import com.vijaychhetry.kidspiano.core.notes.zoomWindow
 fun PianoKeyboardView(
     highlightMidi: Int?,
     heardMidi: Int? = null,
+    compact: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val target = highlightMidi ?: 60
@@ -56,19 +59,30 @@ fun PianoKeyboardView(
             contentDescription = "Piano guide. Play ${displayNoteName(target)}."
         },
     ) {
-        MiniMap(target, heardMidi)
+        MiniMap(target, heardMidi, if (compact) 28.dp else 36.dp)
         CLabels()
-        ZoomStrip(target, heardMidi, Modifier.padding(top = 8.dp))
+        Text(
+            "Press ${displayNoteName(target)}",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
+        )
+        ZoomStrip(
+            highlightMidi = target,
+            heardMidi = heardMidi,
+            compact = compact,
+            modifier = Modifier.padding(top = 2.dp),
+        )
     }
 }
 
 @Composable
-private fun MiniMap(highlightMidi: Int, heardMidi: Int?) {
+private fun MiniMap(highlightMidi: Int, heardMidi: Int?, height: Dp) {
     val whites = (PSR_LOW_MIDI..PSR_HIGH_MIDI).filter { isWhiteKey(it) }
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .height(36.dp)
+            .height(height)
             .clip(RoundedCornerShape(6.dp))
             .background(Color(0xFFE8E0D8)),
     ) {
@@ -129,13 +143,18 @@ private fun CLabels() {
 }
 
 @Composable
-private fun ZoomStrip(highlightMidi: Int, heardMidi: Int?, modifier: Modifier = Modifier) {
+private fun ZoomStrip(
+    highlightMidi: Int,
+    heardMidi: Int?,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val (from, to) = zoomWindow(highlightMidi)
     val whites = (from..to).filter { isWhiteKey(it) }
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
-            .height(120.dp)
+            .height(if (compact) 96.dp else 120.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(Color(0xFFD9D0C6)),
     ) {
@@ -163,31 +182,16 @@ private fun ZoomStrip(highlightMidi: Int, heardMidi: Int?, modifier: Modifier = 
                         ),
                     contentAlignment = Alignment.BottomCenter,
                 ) {
-                    if (taught) {
+                    if (taught || midi == highlightMidi) {
                         Text(
                             midiToNoteName(midi),
-                            fontSize = 11.sp,
+                            fontSize = if (compact) 10.sp else 11.sp,
                             fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
                             color = if (midi == highlightMidi) Color.White else Color(0xFF3C3450),
                             modifier = Modifier.padding(bottom = 6.dp),
                         )
-                    }
-                    if (midi == highlightMidi) {
-                        Box(
-                            Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 4.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (taught) hex(keyColorHex(midi)) else MaterialTheme.colorScheme.primary)
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                displayNoteName(midi),
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Black,
-                            )
-                        }
                     }
                 }
             }

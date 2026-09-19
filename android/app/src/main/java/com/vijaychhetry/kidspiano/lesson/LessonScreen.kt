@@ -9,15 +9,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
@@ -41,6 +42,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
+import com.vijaychhetry.kidspiano.core.notes.KEY_C4
+import com.vijaychhetry.kidspiano.core.notes.letterOf
+import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
 import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
@@ -63,106 +67,163 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
         if (granted) model.start()
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        TextButton(onClick = {
-            model.stop()
-            onHome()
-        }, modifier = Modifier.align(Alignment.Start)) {
-            Text("Home")
-        }
-
-        if (!state.ready) {
+    if (!state.ready) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            TextButton(onClick = {
+                model.stop()
+                onHome()
+            }) { Text("Home") }
             Text(
                 Copy.NOT_CALIBRATED,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
             )
-            return@Column
         }
+        return
+    }
 
-        Text(
-            state.lessonSetLabel,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.align(Alignment.Start),
-        )
-
-        Text(
-            if (state.complete) "You did it" else "Play this key",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text(
-            if (state.complete) "★" else state.noteName,
-            fontSize = 56.sp,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        PianoKeyboardView(
-            highlightMidi = state.expectedMidi,
-            heardMidi = state.heardMidi,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        CueBadge(state.cue)
-        Text(
-            state.feedback,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-        )
-        state.line2?.let {
-            Text(it, style = MaterialTheme.typography.titleMedium)
+    val hero = if (state.complete) {
+        "★" to "You did it"
+    } else {
+        val midi = state.expectedMidi
+        val letter = midi?.let { letterOf(it) } ?: state.letter
+        val subtitle = when (midi) {
+            KEY_C4 -> "C4  ·  middle C"
+            null -> state.noteName
+            else -> midiToNoteName(midi)
         }
-        Text(
-            if (state.complete) "All five keys" else "${state.completedCount} of ${state.total}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
-        Box(
+        letter to subtitle
+    }
+
+    Row(
+        Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(
             Modifier
-                .fillMaxWidth()
-                .height(10.dp)
-                .clip(RoundedCornerShape(5.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .widthIn(min = 200.dp, max = 320.dp)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(state.progress.coerceIn(0f, 1f))
-                    .height(10.dp)
-                    .background(MaterialTheme.colorScheme.secondary),
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(onClick = {
+                    model.stop()
+                    onHome()
+                }) { Text("Home") }
+                Text(state.lessonSetLabel, style = MaterialTheme.typography.labelSmall)
+            }
+            Text(
+                if (state.complete) "You did it" else "Play this key",
+                style = MaterialTheme.typography.titleMedium,
             )
-        }
-        state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.complete) {
-                Button(onClick = { model.playAgain() }) { Text("Play again") }
-            } else {
-                if (!state.running) {
-                    Button(
-                        onClick = {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.RECORD_AUDIO,
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
-                        },
-                    ) { Text("Start") }
-                }
-                OutlinedButton(onClick = { model.stop() }, enabled = state.running) {
-                    Text("Pause")
+            Text(
+                hero.first,
+                fontSize = 72.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+            )
+            Text(
+                hero.second,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                CueBadge(state.cue, compact = true)
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        state.feedback,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    state.line2?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
+            Text(
+                if (state.complete) "All five keys" else "${state.completedCount} of ${state.total}",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(state.progress.coerceIn(0f, 1f))
+                        .height(8.dp)
+                        .background(MaterialTheme.colorScheme.secondary),
+                )
+            }
+            state.error?.let {
+                Text(it, color = MaterialTheme.colorScheme.error, maxLines = 2)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (state.complete) {
+                    Button(onClick = { model.playAgain() }) { Text("Play again") }
+                } else {
+                    if (!state.running) {
+                        Button(
+                            onClick = {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.RECORD_AUDIO,
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                            },
+                        ) { Text("Start") }
+                    }
+                    OutlinedButton(onClick = { model.stop() }, enabled = state.running) {
+                        Text("Pause")
+                    }
+                }
+            }
+        }
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            PianoKeyboardView(
+                highlightMidi = state.expectedMidi,
+                heardMidi = state.heardMidi,
+                compact = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
 @Composable
-private fun CueBadge(cue: LessonCue) {
+private fun CueBadge(cue: LessonCue, compact: Boolean = false) {
     val (symbol, description) = when (cue) {
         LessonCue.YES, LessonCue.DONE -> "✓" to "correct"
         LessonCue.TRY -> "↺" to "try again"
@@ -176,14 +237,15 @@ private fun CueBadge(cue: LessonCue) {
         LessonCue.UNCLEAR -> MaterialTheme.colorScheme.primary
         LessonCue.LISTEN -> MaterialTheme.colorScheme.outline
     }
+    val size = if (compact) 44.dp else 56.dp
     Box(
         Modifier
-            .size(56.dp)
+            .size(size)
             .clip(CircleShape)
             .background(color.copy(alpha = 0.2f))
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, fontSize = 28.sp, color = color, fontWeight = FontWeight.Bold)
+        Text(symbol, fontSize = if (compact) 22.sp else 28.sp, color = color, fontWeight = FontWeight.Bold)
     }
 }

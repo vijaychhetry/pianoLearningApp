@@ -2,11 +2,11 @@
 
 Debug build of **Kids Piano**. Not a Play Store release.
 
-**Download (0.5.0 — Trust the ears):** [KidsPiano-debug-0.5.0.apk](./KidsPiano-debug-0.5.0.apk)
+**Download (0.5.1 — landscape Practice):** [KidsPiano-debug-0.5.1.apk](./KidsPiano-debug-0.5.1.apk)
 
 On GitHub, open that file and use **Download raw file**. On a phone, you can also use the raw URL for this branch:
 
-https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/spec-v4-050-2211/releases/KidsPiano-debug-0.5.0.apk
+https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/spec-v4-050-2211/releases/KidsPiano-debug-0.5.1.apk
 
 Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug build first if the installer refuses (same package id `com.vijaychhetry.kidspiano`).
 
@@ -17,7 +17,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 3. **Setup** — put the phone on the stand, stick the five colour labels on **C4 D4 E4 F4 G4**, share the sticker list if you want a printout.
 4. **Calibrate** — pick the key from the dropdown if you need to jump. Play four separate presses of each asked key (press, let go, press again). The on-screen keyboard shows which physical key.
 5. **Files** — share the calibration JSON and the session log (JSON only, no recordings).
-6. **Kids Home → Practice**. Play the glowing key on the Yamaha. The big name is `C4 (middle C)` for the first key.
+6. **Kids Home → Practice**. The phone turns **landscape**. Play the glowing key on the Yamaha. The big letter is `C`; under it it says `C4 · middle C`.
 
 **Audio Lab** is still under Grown-ups. It is an engineering readout, not a lesson.
 
@@ -32,6 +32,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 
 | Version | Notes |
 | --- | --- |
+| 0.5.1 | Practice (and later games) lock to landscape so the keyboard no longer overlaps. Home, Setup, Calibrate, Files, and Audio Lab stay portrait. |
 | 0.5.0 | Spec v4 “Trust the ears”: on-screen keyboard (mini-map + zoom), hearable-key dropdown, exportable calibration + session log, Setup + stickers, times-table gate with 2 s hold, hop-512 capture. Level ladder and falling game are **not** in this APK. |
 | 0.4.0 | Child Home + Level 1 Find this key (C–G). Calibration profile now retunes A4 for live recognition. Calibrate and Audio Lab sit behind a grown-ups gate. |
 | 0.3.0-lab | Review fixes. A microphone that opens but sends nothing is now detected by a clock rather than by the audio it is failing to send, so the screen can no longer sit blank. Source recovery stops after one pass and keeps the log. Calibration takes one sample per key press instead of one per frame, and a weak profile is no longer saved silently. Test suite 73 → 113. |

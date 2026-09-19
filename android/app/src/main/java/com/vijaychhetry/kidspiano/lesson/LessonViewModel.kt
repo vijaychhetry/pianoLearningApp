@@ -73,6 +73,7 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<LessonUiState> = _state
 
     fun useProfile(profile: CalibrationProfile?, lessonNotes: List<Int> = defaultLessonMidi()) {
+        if (session != null && notes == lessonNotes && _state.value.ready) return
         notes = lessonNotes
         if (!lessonMayStart(profile) || profile == null) {
             session = null
