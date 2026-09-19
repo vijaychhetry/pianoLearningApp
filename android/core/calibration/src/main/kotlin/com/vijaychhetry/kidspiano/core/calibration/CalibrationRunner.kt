@@ -82,7 +82,7 @@ class CalibrationRunner(
 
         val feedback = when {
             pitch.signalStrength < YinHpsPitchDetector.MIN_RMS ->
-                "Too quiet — move the phone closer, then play ${letterOf(target)}."
+                "Too quiet — move the phone closer, then play ${nameOf(target)}."
             waitForIdle ->
                 "Let go, then play ${nameOf(target)}."
             phase != NotePhase.STABLE ->
