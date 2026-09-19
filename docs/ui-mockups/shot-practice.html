@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; background: #fff6f0; font-family: "Segoe UI", sans-serif; color: #1e1633; }
+    .phone { width: 390px; height: 844px; padding: 28px 22px 20px; box-sizing: border-box; }
+    .home { color: #5b3cc4; font-weight: 600; font-size: 16px; }
+    .label { text-align: center; margin-top: 18px; font-size: 16px; color: #6b6280; }
+    .hero { text-align: center; font-size: 96px; font-weight: 800; color: #5b3cc4; line-height: 0.95; margin: 8px 0; }
+    .cue { width: 56px; height: 56px; border-radius: 50%; background: #d9f0e4; color: #1f8a5b; display: grid; place-items: center; font-size: 28px; margin: 8px auto; }
+    .feedback { text-align: center; font-size: 24px; font-weight: 700; }
+    .phone { overflow: visible; }
+    .meta { text-align: center; color: #6b6280; font-size: 15px; margin-top: 6px; }
+    .bar { height: 10px; background: #eadfd6; border-radius: 6px; margin: 14px 0 18px; }
+    .bar i { display: block; width: 20%; height: 100%; background: #1f8a5b; border-radius: 6px; }
+    .kb-wrap { border: 1px solid #c8b8aa; border-radius: 12px; background: #1a1524; padding: 8px 8px 10px; }
+    .mini { position: relative; height: 44px; margin-bottom: 10px; }
+    .mini-whites { display: flex; height: 28px; }
+    .mini-white { flex: 1 1 0; background: #fff; border: 1px solid #c9c1b8; box-sizing: border-box; }
+    .mini-white.target { background: #5b3cc4; }
+    .mini-white.same { box-shadow: inset 0 0 0 1px rgba(91,60,196,0.55); }
+    .mini-white.faded { opacity: 0.35; }
+    .mini-black { position: absolute; top: 0; width: 6px; height: 16px; background: #111; }
+    .mini-labels { display: flex; height: 14px; color: #eee; font-size: 8px; }
+    .mini-labels span { flex: 1 1 0; text-align: center; }
+    .zoom { position: relative; height: 122px; padding-top: 18px; }
+    .zoom-whites { display: flex; height: 100px; }
+    .zoom-white { flex: 1 1 0; background: #fff; border: 1px solid #c9c1b8; position: relative; box-sizing: border-box; }
+    .zoom-white.target { background: #5b3cc4; }
+    .zoom-white.same { box-shadow: inset 0 0 0 2px rgba(91,60,196,0.4); }
+    .zoom-black { position: absolute; top: 0; width: 14px; height: 62px; background: #111; border-radius: 0 0 2px 2px; }
+    .callout { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: #5b3cc4; color: #fff; font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 6px; }
+    .clabel { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 9px; color: #5b3cc4; font-weight: 700; }
+    .pause { display: block; margin: 18px auto 0; width: 120px; padding: 10px 0; border: 1.5px solid #5b3cc4; background: #fff; color: #5b3cc4; border-radius: 10px; font-weight: 700; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="home">Home</div>
+    <div class="label">Play this key</div>
+    <div class="hero">C4</div>
+    <div class="cue">✓</div>
+    <div class="feedback">Yes! Now D4.</div>
+    <div class="meta">1 of 5</div>
+    <div class="bar"><i></i></div>
+    <div class="kb-wrap" id="kb"></div>
+    <button class="pause">Pause</button>
+  </div>
+  <script src="keyboard.js"></script>
+  <script>renderKeyboard(document.getElementById("kb"), 60);</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; background: #fff6f0; font-family: "Segoe UI", sans-serif; color: #1e1633; }
+    .phone { width: 390px; height: 844px; padding: 24px 22px 16px; box-sizing: border-box; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; }
+    h1 { margin: 0; font-size: 26px; }
+    .link { color: #5b3cc4; font-weight: 600; }
+    .tabs { display: flex; gap: 6px; margin: 16px 0 18px; }
+    .tab { flex: 1; text-align: center; padding: 9px 4px; border-radius: 10px; border: 1.5px solid #5b3cc4; color: #5b3cc4; font-size: 12px; font-weight: 700; }
+    .tab.on { background: #5b3cc4; color: #fff; }
+    label { display: block; margin: 8px 0 6px; color: #6b6280; font-size: 14px; }
+    .field { width: 100%; padding: 12px 14px; border: 1px solid #e8dcd3; border-radius: 10px; background: #fff; font-size: 16px; box-sizing: border-box; display: flex; justify-content: space-between; }
+    .card { background: #fffbfa; border: 1px solid #e8dcd3; border-radius: 14px; padding: 16px; margin-top: 14px; }
+    .card h2 { margin: 0 0 6px; font-size: 18px; }
+    .card p { margin: 0; color: #6b6280; font-size: 14px; line-height: 1.4; }
+    .note { margin-top: 18px; color: #6b6280; font-size: 13px; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top"><h1>Grown-ups</h1><span class="link">Kids Home</span></div>
+    <div class="tabs">
+      <div class="tab">Calibrate</div>
+      <div class="tab">Audio Lab</div>
+      <div class="tab on">Files</div>
+    </div>
+    <label>Lesson set</label>
+    <div class="field"><span>C4–G4 (first)</span><span>▾</span></div>
+    <div class="card">
+      <h2>Export calibration</h2>
+      <p>Shares calibration-2026-09-19.json — quality, medians, spread. No recordings.</p>
+    </div>
+    <div class="card">
+      <h2>Export session log</h2>
+      <p>Shares session-2026-09-19.jsonl — one scored event per line.</p>
+    </div>
+    <p class="note">On the phone the live profile stays in app prefs. Export is how we analyse it here.</p>
+  </div>
+</body>
+</html>
