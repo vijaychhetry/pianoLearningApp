@@ -2,7 +2,7 @@
 
 Canonical product rules: `docs/KIDS_PIANO_MASTER_SPEC.md` §§5–11, §41, §44.
 
-These IDs are **Tier 1 JVM unit tests** (129 of them as of 0.4.0). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
+These IDs are **Tier 1 JVM unit tests** (131 of them as of 0.4.0). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
 
 Run:
 

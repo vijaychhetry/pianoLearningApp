@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body { margin: 0; background: #fff6f0; font-family: "Segoe UI", sans-serif; color: #1e1633; }
+    .phone { width: 390px; height: 844px; padding: 24px 22px 16px; box-sizing: border-box; }
+    .top { display: flex; justify-content: space-between; align-items: baseline; }
+    h1 { margin: 0; font-size: 26px; }
+    .link { color: #5b3cc4; font-weight: 600; }
+    label { display: block; margin: 16px 0 6px; color: #6b6280; font-size: 14px; }
+    .field { width: 100%; padding: 12px 14px; border: 1px solid #e8dcd3; border-radius: 10px; background: #fff; font-size: 16px; box-sizing: border-box; display: flex; justify-content: space-between; }
+    .label { text-align: center; margin-top: 16px; color: #6b6280; }
+    .hero { text-align: center; font-size: 64px; font-weight: 800; color: #5b3cc4; margin: 4px 0; }
+    .meta { text-align: center; color: #6b6280; font-size: 14px; }
+    .kb-wrap { border: 1px solid #c8b8aa; border-radius: 10px; background: #111; padding: 8px 6px 4px; overflow: hidden; margin: 12px 0; }
+    .kb { position: relative; height: 128px; width: 100%; }
+    .whites { display: flex; height: 104px; width: 100%; }
+    .white { flex: 1 1 0; height: 104px; background: #fff; border: 1px solid #c9c1b8; position: relative; box-sizing: border-box; }
+    .white.target { background: #5b3cc4; }
+    .white.same { box-shadow: inset 0 0 0 2px rgba(91,60,196,0.35); }
+    .white.target span { position: absolute; bottom: 6px; left: 0; right: 0; color: #fff; font-size: 8px; font-weight: 700; text-align: center; }
+    .black { position: absolute; top: 0; width: 11px; height: 64px; background: #1a1a1a; border-radius: 0 0 2px 2px; }
+    .octaves { display: flex; height: 18px; color: #ddd; font-size: 8px; width: 100%; }
+    .octaves span { flex: 1 1 0; text-align: center; }
+    .row { display: flex; gap: 8px; margin-top: 8px; }
+    button { flex: 1; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 14px; }
+    .primary { background: #5b3cc4; color: #fff; border: 0; }
+    .ghost { background: #fff; color: #5b3cc4; border: 1.5px solid #5b3cc4; }
+    .status { text-align: center; margin: 14px 0 10px; font-size: 13px; color: #6b6280; }
+    .export { width: 100%; padding: 12px 0; border-radius: 10px; background: #fff; color: #5b3cc4; border: 1.5px solid #5b3cc4; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <div class="top"><h1>Calibrate</h1><span class="link">Kids Home</span></div>
+    <label>Key</label>
+    <div class="field"><span>C4</span><span>▾</span></div>
+    <div class="label">Play this key</div>
+    <div class="hero">C4</div>
+    <div class="meta">sample 2 of 4</div>
+    <div class="kb-wrap" id="kb"></div>
+    <div class="row">
+      <button class="primary">Start</button>
+      <button class="ghost">Pause</button>
+      <button class="ghost">Skip key</button>
+    </div>
+    <div class="status">Saved profile: EXCELLENT · 5 notes</div>
+    <button class="export">Export calibration</button>
+  </div>
+  <script src="keyboard.js"></script>
+  <script>renderKeyboard(document.getElementById("kb"), 60);</script>
+</body>
+</html>
