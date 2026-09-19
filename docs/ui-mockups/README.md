@@ -2,6 +2,19 @@
 
 These screens are the design to implement. They are **not** screenshots of a built APK.
 
+**For review, start with the PDF: [`../review/KidsPiano-app-and-screens.pdf`](../review/KidsPiano-app-and-screens.pdf)** — the complete app
+description plus all eleven screens, one per page, each with a title and a short
+explanation. Source: `app-review.html`, rendered with
+`google-chrome --headless --print-to-pdf`.
+
+## Screens that exist today but had no mockup
+
+- `tool_home.png` — Home: one big Play button, star total, the Grown-ups link.
+- `tool_gate.png` — the Grown-ups maths gate.
+- `tool_lab.png` — Audio Lab: live note, signal metrics, event log.
+
+Shared assets: `tools.css`, `shot-home|gate|lab.html`.
+
 ## 0.6.0 — level ladder, songs, falling game
 
 - `kids-prototype.html` — all five kid screens side by side. Open this one first.
