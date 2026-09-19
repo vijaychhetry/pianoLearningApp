@@ -37,10 +37,17 @@ fun lessonSets(): List<Pair<String, List<Int>>> = listOf(
     "C3–G3 (lower)" to lowerClusterLessonMidi(),
 )
 
-/** Zoom strip: C4–C5 for the default lesson set (spec §9.3). */
+/** Zoom strip: ~15 whites around the target, always including it. */
 fun zoomWindow(centerMidi: Int = KEY_C4): Pair<Int, Int> {
-    return if (centerMidi in 48..55) 48 to 60 else 60 to 72
+    val whites = (PSR_LOW_MIDI..PSR_HIGH_MIDI).filter { isWhiteKey(it) }
+    val idx = whites.indexOf(centerMidi).let { if (it < 0) whites.indexOf(KEY_C4) else it }
+    var start = (idx - 7).coerceAtLeast(0)
+    var end = (start + 14).coerceAtMost(whites.lastIndex)
+    start = (end - 14).coerceAtLeast(0)
+    return whites[start] to whites[end]
 }
+
+fun cOctaveMarkers(): List<Int> = listOf(36, 48, 60, 72, 84, 96)
 
 fun whiteKeyLeftFraction(midi: Int, from: Int, to: Int): Float {
     val whites = (from..to).filter { isWhiteKey(it) }

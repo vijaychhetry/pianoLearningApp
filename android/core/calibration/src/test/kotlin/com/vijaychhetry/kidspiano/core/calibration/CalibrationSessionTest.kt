@@ -165,6 +165,9 @@ class CalibrationSessionTest {
         session.jumpTo(64)
         assertEquals(64, session.currentMidi)
         assertTrue(64 in session.notes)
+        assertFalse(session.jumpTo(61))
+        assertFalse(session.jumpTo(36))
+        assertEquals(64, session.currentMidi)
     }
 }
 

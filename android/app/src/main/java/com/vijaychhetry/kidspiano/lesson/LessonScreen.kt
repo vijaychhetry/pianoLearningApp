@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -28,9 +26,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +41,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
-import com.vijaychhetry.kidspiano.core.notes.lessonSets
 import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
@@ -56,8 +51,6 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) model.start() }
-    var setOpen by remember { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
         model.useProfile(store.load(), store.lessonMidi())
     }
@@ -94,21 +87,11 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             return@Column
         }
 
-        Box(Modifier.align(Alignment.Start)) {
-            TextButton(onClick = { setOpen = true }) { Text(state.lessonSetLabel) }
-            DropdownMenu(expanded = setOpen, onDismissRequest = { setOpen = false }) {
-                lessonSets().forEach { (label, notes) ->
-                    DropdownMenuItem(
-                        text = { Text(label) },
-                        onClick = {
-                            setOpen = false
-                            store.saveLessonMidi(notes)
-                            model.useProfile(store.load(), notes)
-                        },
-                    )
-                }
-            }
-        }
+        Text(
+            state.lessonSetLabel,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.align(Alignment.Start),
+        )
 
         Text(
             if (state.complete) "You did it" else "Play this key",

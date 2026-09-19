@@ -40,6 +40,7 @@ class CalibrationRunner(
 
     private var session = newSession()
     private var lastLevel = 0.0
+    private var waitForIdle = false
 
     /** Labels the saved profile; the caller sets it from the live mic source. */
     var microphoneLabel: String = "unknown"
@@ -67,6 +68,7 @@ class CalibrationRunner(
         lastLevel = pitch.signalStrength
         if (silence.onFrame(pitch.signalStrength, frame.capturedAtMs)) sourceLooksDead = true
         val phase = debouncer.onFrame(if (pitch.ambiguous) null else pitch.midiNote)
+        if (phase == NotePhase.IDLE) waitForIdle = false
         if (phase != NotePhase.STABLE) {
             // The key was let go: the next steady note is a new press, and only
             // a new press may contribute another sample.
@@ -81,20 +83,22 @@ class CalibrationRunner(
         val feedback = when {
             pitch.signalStrength < YinHpsPitchDetector.MIN_RMS ->
                 "Too quiet — move the phone closer, then play ${letterOf(target)}."
+            waitForIdle ->
+                "Let go, then play ${nameOf(target)}."
             phase != NotePhase.STABLE ->
-                "Hold the ${letterOf(target)} key so I can hear it clearly."
+                "Hold the ${nameOf(target)} key so I can hear it clearly."
             else -> {
                 val heard = recognizer.recognize(pitch)
                 when (session.offer(heard?.midi, heard?.frequency, pitch.confidence)) {
                     CalibrationSession.Offer.ACCEPTED ->
-                        "Good — ${letterOf(target)} ${session.acceptedCount(target)} of ${session.samplesPerNote}. " +
+                        "Good — ${nameOf(target)} ${session.acceptedCount(target)} of ${session.samplesPerNote}. " +
                             "Let go, then play it again."
                     CalibrationSession.Offer.SAME_PRESS ->
-                        "Let go of ${letterOf(target)}, then play it again."
+                        "Let go of ${nameOf(target)}, then play it again."
                     CalibrationSession.Offer.WRONG_KEY ->
-                        "That was ${letterOf(heard?.midi)}. Please play ${letterOf(target)}."
+                        "That was ${nameOf(heard?.midi)}. Please play ${nameOf(target)}."
                     CalibrationSession.Offer.UNCLEAR ->
-                        "I couldn't hear that clearly. Play ${letterOf(target)} again."
+                        "I couldn't hear that clearly. Play ${nameOf(target)} again."
                     CalibrationSession.Offer.DONE -> "All five keys captured."
                 }
             }
@@ -115,15 +119,16 @@ class CalibrationRunner(
         debouncer.reset()
         session.onRelease()
         session.jumpTo(midi)
+        waitForIdle = true
         val target = session.currentMidi
-        return snapshot(target?.let { "Now play ${letterOf(it)}." } ?: "Finished.")
+        return snapshot(target?.let { "Now play ${nameOf(it)}." } ?: "Finished.")
     }
 
     fun skip(): Snapshot {
         session.skipCurrent()
         finishIfComplete()
         val target = session.currentMidi
-        return snapshot(target?.let { "Skipped. Now play ${letterOf(it)}." } ?: "Finished.")
+        return snapshot(target?.let { "Skipped. Now play ${nameOf(it)}." } ?: "Finished.")
     }
 
     fun restart(): Snapshot {
@@ -131,7 +136,8 @@ class CalibrationRunner(
         profile = null
         sourceLooksDead = false
         silence.reset()
-        return snapshot("Tap Start, then play the ${letterOf(session.currentMidi)} key.")
+        waitForIdle = false
+        return snapshot("Tap Start, then play the ${nameOf(session.currentMidi)} key.")
     }
 
     fun onSourceSwitched() {
@@ -140,7 +146,7 @@ class CalibrationRunner(
     }
 
     fun prompt(): String =
-        session.currentMidi?.let { "Play the ${letterOf(it)} key." } ?: "Finished."
+        session.currentMidi?.let { "Play the ${nameOf(it)} key." } ?: "Finished."
 
     fun snapshot(feedback: String = prompt()): Snapshot {
         val target = session.currentMidi
@@ -164,4 +170,6 @@ class CalibrationRunner(
     }
 
     private fun letterOf(midi: Int?): String = midi?.let { noteLetter(it) } ?: "—"
+
+    private fun nameOf(midi: Int?): String = midi?.let { midiToNoteName(it) } ?: "—"
 }

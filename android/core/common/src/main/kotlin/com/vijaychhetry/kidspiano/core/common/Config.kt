@@ -16,8 +16,8 @@ object Config {
 
     const val F_MIN = 120.0
     const val F_MAX = 1100.0
-    const val MIN_CLARITY = 0.85
-    const val MIN_CONFIDENCE = 0.80
+    const val MIN_CLARITY = 0.55
+    const val MIN_CONFIDENCE = 0.70
     const val AGREE_FRAMES = 3
     const val CLASSIFY_MAX_CENTS = 50.0
     const val TWO_NOTE_SALIENCE_DB = 10.0

@@ -10,6 +10,7 @@ import com.vijaychhetry.kidspiano.core.common.UnclearReason
 import com.vijaychhetry.kidspiano.core.common.Verdict
 import com.vijaychhetry.kidspiano.core.notes.DefaultNoteValidator
 import com.vijaychhetry.kidspiano.core.notes.NoteValidator
+import com.vijaychhetry.kidspiano.core.notes.displayNoteName
 import com.vijaychhetry.kidspiano.core.notes.letterOf
 import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
 import com.vijaychhetry.kidspiano.core.pitch.DefaultNoteRecognizer
@@ -126,13 +127,20 @@ class LessonSession(
 
         val press = tracker.onFrame(frame)
         if (press != null && judgedMidi == null) {
-            val verdict = judge(
-                target,
-                press,
-                promptShownAtNanos,
-                minConfidence = 0.70,
-                minClarity = 0.55,
-            )
+            val heard = press.midi
+            val withEvidence = if (heard != null) {
+                press.copy(
+                    octaveEvidence = com.vijaychhetry.kidspiano.core.pitch.octaveEvidenceFromSamples(
+                        frame.samples,
+                        frame.sampleRate,
+                        target,
+                        heard,
+                    ),
+                )
+            } else {
+                press
+            }
+            val verdict = judge(target, withEvidence, promptShownAtNanos)
             lastVerdict = verdict
             applyVerdict(verdict, target)
         } else if (lastVerdict == null) {
@@ -225,7 +233,7 @@ class LessonSession(
                     RecognitionStatus.UNCLEAR
                 }
                 lastFeedback = Copy.unclear(verdict.reason)
-                lastLine2 = "One key at a time."
+                lastLine2 = null
             }
             is Verdict.IgnoredStale -> Unit
         }
@@ -238,7 +246,7 @@ class LessonSession(
             expectedMidi = target,
             heardMidi = lastHeardMidi,
             letter = target?.let { letterOf(it) } ?: "—",
-            noteName = target?.let { midiToNoteName(it) } ?: "Done",
+            noteName = target?.let { displayNoteName(it) } ?: "Done",
             completedCount = index.coerceAtMost(notes.size),
             total = notes.size,
             progress = (index.coerceAtMost(notes.size)).toFloat() / notes.size,

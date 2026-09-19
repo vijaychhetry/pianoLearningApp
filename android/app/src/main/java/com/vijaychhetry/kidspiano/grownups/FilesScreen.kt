@@ -1,17 +1,21 @@
 package com.vijaychhetry.kidspiano.grownups
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -19,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.diagnostics.calibrationToJson
+import com.vijaychhetry.kidspiano.core.notes.lessonSets
 import com.vijaychhetry.kidspiano.export.FileExporter
 import com.vijaychhetry.kidspiano.export.SessionLogStore
 
@@ -28,6 +33,10 @@ fun FilesScreen() {
     val store = remember { CalibrationStore(context) }
     val logStore = remember { SessionLogStore(context) }
     var lines by remember { mutableIntStateOf(logStore.lineCount()) }
+    var setOpen by remember { mutableStateOf(false) }
+    var lessonLabel by remember {
+        mutableStateOf(lessonSets().firstOrNull { it.second == store.lessonMidi() }?.first ?: "C4–G4 (first)")
+    }
     val profile = remember { store.load() }
 
     Column(
@@ -42,6 +51,24 @@ fun FilesScreen() {
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(store.summary() ?: "No calibration saved yet.", style = MaterialTheme.typography.bodySmall)
+        Text("Practice set (grown-ups only)", style = MaterialTheme.typography.titleMedium)
+        Box {
+            OutlinedButton(onClick = { setOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(lessonLabel)
+            }
+            DropdownMenu(expanded = setOpen, onDismissRequest = { setOpen = false }) {
+                lessonSets().forEach { (label, notes) ->
+                    DropdownMenuItem(
+                        text = { Text(label) },
+                        onClick = {
+                            setOpen = false
+                            store.saveLessonMidi(notes)
+                            lessonLabel = label
+                        },
+                    )
+                }
+            }
+        }
         Button(
             onClick = {
                 val p = store.load()
@@ -59,7 +86,7 @@ fun FilesScreen() {
                     context,
                     "session.jsonl",
                     logStore.readAll().ifBlank { "{}\n" },
-                    mime = "application/jsonl",
+                    mime = "application/json",
                 )
             },
             modifier = Modifier.fillMaxWidth(),

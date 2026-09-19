@@ -36,6 +36,8 @@ import com.vijaychhetry.kidspiano.core.notes.hearable
 import com.vijaychhetry.kidspiano.core.notes.isWhiteKey
 import com.vijaychhetry.kidspiano.core.notes.keyColorHex
 import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
+import com.vijaychhetry.kidspiano.core.notes.cOctaveMarkers
+import com.vijaychhetry.kidspiano.core.notes.whiteKeyLeftFraction
 import com.vijaychhetry.kidspiano.core.notes.zoomWindow
 
 /**
@@ -55,6 +57,7 @@ fun PianoKeyboardView(
         },
     ) {
         MiniMap(target, heardMidi)
+        CLabels()
         ZoomStrip(target, heardMidi, Modifier.padding(top = 8.dp))
     }
 }
@@ -101,6 +104,26 @@ private fun MiniMap(highlightMidi: Int, heardMidi: Int?) {
                         .border(1.5.dp, Color(0xFF111111), RoundedCornerShape(1.dp)),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CLabels() {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .height(16.dp),
+    ) {
+        cOctaveMarkers().forEach { midi ->
+            val left = whiteKeyLeftFraction(midi, PSR_LOW_MIDI, PSR_HIGH_MIDI)
+            Text(
+                midiToNoteName(midi),
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF3C3450),
+                modifier = Modifier.offset(x = maxWidth * left),
+            )
         }
     }
 }

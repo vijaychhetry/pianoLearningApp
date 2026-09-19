@@ -29,6 +29,7 @@ class ExportTest {
         val json = calibrationToJson(profile)
         assertTrue(json.contains("\"note\":\"C4\""))
         assertTrue(json.contains("\"medianHz\":262.10"))
+        assertTrue(json.contains("\"spreadHz\":3.20"))
         assertTrue(json.contains("PSR-F52"))
         assertFalse(json.contains("pcm", ignoreCase = true))
         assertFalse(json.contains("wav", ignoreCase = true))

@@ -45,4 +45,13 @@ class PianoKeyboardTest {
         assertEquals(listOf(60, 62, 64, 65, 67), sets[0].second)
         assertEquals(listOf(48, 50, 52, 53, 55), sets[1].second)
     }
+
+    @Test
+    fun acKey05_zoomAlwaysContainsTheHighlightedWhiteKey() {
+        listOf(45, 48, 60, 69, 89).forEach { midi ->
+            val (from, to) = zoomWindow(midi)
+            assertTrue(midi in from..to, "zoom $from..$to missed $midi")
+        }
+        assertEquals(listOf(36, 48, 60, 72, 84, 96), cOctaveMarkers())
+    }
 }

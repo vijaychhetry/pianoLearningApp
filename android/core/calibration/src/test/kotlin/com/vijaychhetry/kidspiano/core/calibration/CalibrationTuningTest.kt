@@ -60,11 +60,26 @@ class CalibrationTuningTest {
             NoteCalibration(62, midiToFreq(62), 294.1, 0.2, 0.95, 4),
         )
         val csv = formatSavedNotes(notes)
-        assertEquals("60:261.90:4,62:294.10:4", csv)
+        assertEquals("60:261.90:4:0.10,62:294.10:4:0.20", csv)
         val parsed = parseSavedProfile("EXCELLENT", csv, "MIC", 44100, 1L)
         assertNotNull(parsed)
         assertEquals(261.9, parsed!!.notes[0].observedMedianFrequency, 0.001)
         assertEquals(294.1, parsed.notes[1].observedMedianFrequency, 0.001)
+        assertEquals(0.1, parsed.notes[0].frequencySpread, 0.001)
+    }
+
+    @Test
+    fun acTune06_threeFieldCsvFrom04StillLoads() {
+        val parsed = parseSavedProfile(
+            "GOOD",
+            "60:261.90:4,62:294.10:4",
+            "MIC",
+            44100,
+            1L,
+        )
+        assertNotNull(parsed)
+        assertEquals(0.0, parsed!!.notes[0].frequencySpread, 0.001)
+        assertEquals(261.9, parsed.notes[0].observedMedianFrequency, 0.001)
     }
 
     @Test

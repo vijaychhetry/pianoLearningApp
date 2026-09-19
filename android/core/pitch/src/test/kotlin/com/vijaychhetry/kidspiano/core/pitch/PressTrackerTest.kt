@@ -42,6 +42,17 @@ class PressTrackerTest {
     }
 
     @Test
+    fun acR03b_aNewAttackWhileHeldIsASecondPress() {
+        val tracker = PressTracker()
+        var events = 0
+        repeat(10) { if (tracker.onFrame(tone(60, it, 1.0f)) != null) events++ }
+        assertEquals(1, events)
+        repeat(4) { tracker.onFrame(tone(60, 10 + it, 0.15f)) }
+        repeat(10) { i -> if (tracker.onFrame(tone(60, 20 + i, 1.0f)) != null) events++ }
+        assertEquals(2, events, "re-press during sustain should emit a second event")
+    }
+
+    @Test
     fun acR05_holdingCWhileNothingNewHappensDoesNotEmitAgain() {
         val tracker = PressTracker()
         val first = (0 until 10).map { tracker.onFrame(tone(60, it)) }.firstOrNull { it != null }
@@ -56,8 +67,8 @@ class PressTrackerTest {
         assertNull(tracker.onFrame(AudioFrame(FloatArray(2048), SR, 0)))
     }
 
-    private fun tone(midi: Int, index: Int): AudioFrame {
-        val t = pianoTone(midiToFreq(midi), SR, 1.0)
+    private fun tone(midi: Int, index: Int, amplitude: Float = 1.0f): AudioFrame {
+        val t = pianoTone(midiToFreq(midi), SR, 1.0, amplitude = amplitude)
         val start = (2000 + index % 8 * 64).coerceAtMost(t.size - 2048)
         return AudioFrame(t.copyOfRange(start, start + 2048), SR, index * FRAME_MS)
     }

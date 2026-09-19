@@ -191,6 +191,10 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-KEY-03 | Distance copy counts white-key steps | `acKey03_distanceSentenceCountsWhiteKeys` |
 | AC-KEY-04 | Two lesson sets: C4–G4 and C3–G3 | `acKey04_twoLessonSetsAreC4ClusterAndC3Cluster` |
 | AC-CAL-JUMP-01 | Jumping to a sampled key clears it | `CalibrationSessionTest.acCalJump01_jumpingToASampledKeyClearsItAndDoesNotMixOldReadings` |
+| AC-CAL-JUMP-02 | Jump after a finished profile is ignored | `CalibrationRunnerTest.acCalJump02_jumpAfterProfileIsIgnored` |
+| AC-CAL-JUMP-03 | Jump while held does not sample the new key | `CalibrationRunnerTest.acCalJump03_jumpingWhileHeldDoesNotSampleTheNewKey` |
+| AC-LEARN-12 | Lower cluster uses the C4–G4 profile and asks for C3 | `LessonPolicyTest.acLearn12_lowerClusterUsesTheSameProfileAndAsksForC3` |
+| AC-TUNE-06 | 0.4.0 three-field CSV still loads | `CalibrationTuningTest.acTune06_threeFieldCsvFrom04StillLoads` |
 | AC-EXPORT-01 | Calibration JSON names keys and has no audio | `ExportTest.acExport01_calibrationJsonNamesKeysAndHasNoAudio` |
 | AC-EXPORT-02 | Session log round-trips stale presses | `ExportTest.acExport02_sessionLogRoundTripsAndMarksStalePresses` |
 | AC-R-15 | Times-table gate, factors in 6–9 | `ParentGateTest.acR15_*` |

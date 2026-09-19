@@ -30,7 +30,7 @@ class LessonSessionTest {
         val snap = session.snapshot()
         assertEquals(60, snap.expectedMidi)
         assertEquals("C", snap.letter)
-        assertEquals("C4", snap.noteName)
+        assertEquals("C4 (middle C)", snap.noteName)
         assertEquals(LessonCue.LISTEN, snap.cue)
         assertTrue(snap.feedback.contains("C4"), "got: ${snap.feedback}")
         assertEquals(0, snap.completedCount)
@@ -195,6 +195,21 @@ class LessonPolicyTest {
             calibrationQuality = CalibrationProfile.Quality.NEEDS_IMPROVEMENT,
         )
         assertFalse(lessonMayStart(blocked))
+    }
+
+    @Test
+    fun acLearn12_lowerClusterUsesTheSameProfileAndAsksForC3() {
+        val engine = MedianCalibrationEngine()
+        val goodNotes = MVP_CALIBRATION_MIDI.associateWith { midi ->
+            List(4) { midiToFreq(midi) }
+        }
+        val good = engine.buildProfile(goodNotes, 44100, "MIC")
+        val session = lessonSessionFor(good, com.vijaychhetry.kidspiano.core.notes.lowerClusterLessonMidi())
+        session.begin(0)
+        assertEquals(48, session.expectedMidi)
+        val snap = play(session, 48, 0)
+        assertEquals(50, snap.expectedMidi)
+        assertTrue(snap.feedback.contains("Yes"), "got: ${snap.feedback}")
     }
 }
 

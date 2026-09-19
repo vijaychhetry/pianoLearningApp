@@ -19,7 +19,7 @@ class PressTracker(
     private val onset: OnsetDetector = OnsetDetector(),
     private val agreeFrames: Int = Config.AGREE_FRAMES,
     private val timeoutMs: Int = Config.PRESS_TIMEOUT_MS,
-    private val minClarity: Double = 0.55,
+    private val minClarity: Double = Config.MIN_CLARITY,
     private val releaseBelowPeakDb: Double = Config.RELEASE_BELOW_PEAK_DB,
     private val minLevelAboveFloorDb: Double = Config.MIN_LEVEL_DB_ABOVE_FLOOR,
 ) {
@@ -41,12 +41,13 @@ class PressTracker(
     fun lastFloorDb(): Double = onset.lastFloorDb
 
     fun onFrame(frame: AudioFrame): PressEvent? {
-        val hop = onset.onHop(frame.samples, frame.capturedAtMs)
+        val hopSamples = hopOf(frame.samples)
+        val hop = onset.onHop(hopSamples, frame.capturedAtMs)
         val pitch = detector.detect(frame)
         lastPitch = pitch
         val nowNanos = frame.capturedAtMs * 1_000_000L
 
-        if (hop.onset && phase == Phase.IDLE) {
+        if (hop.onset && (phase == Phase.IDLE || phase == Phase.HELD)) {
             startAttack(nowNanos, hop.rmsDb)
         }
 
@@ -162,6 +163,11 @@ class PressTracker(
         expectedFundamentalDb = goertzelDb(samples, sampleRate, midiToFreq(detectedMidi - 12)),
         detectedFundamentalDb = goertzelDb(samples, sampleRate, midiToFreq(detectedMidi)),
     )
+
+    private fun hopOf(samples: FloatArray): FloatArray {
+        val n = Config.HOP
+        return if (samples.size > n) samples.copyOfRange(samples.size - n, samples.size) else samples
+    }
 
     private fun resetToIdle() {
         phase = Phase.IDLE

@@ -35,12 +35,14 @@ fun SetupScreen() {
     val context = LocalContext.current
     val store = remember { CalibrationStore(context) }
     val calibrated = store.load()?.usableAsDefault == true
-    val steps = listOf(
-        "Put the phone on the piano music stand, mic toward the keys." to true,
-        "Stick the five colour labels on C4 D4 E4 F4 G4 (middle C and the four keys to the right)." to true,
-        "Calibrate: four separate presses of each key." to calibrated,
-        "Kids Home → Practice. Play the glowing key." to calibrated,
-    )
+        val steps = listOf(
+            "Put the phone on the piano music stand, mic toward the keys." to true,
+            "Voice: Grand Piano. Turn off Dual / Split / Sustain if they are on." to true,
+            "Play one C4. You should hear it clearly from the phone’s place." to true,
+            "Stick the five colour labels on C4 D4 E4 F4 G4 (middle C and the four keys to the right)." to true,
+            "Calibrate: four separate presses of each key." to calibrated,
+            "Kids Home → Practice. Play the glowing key." to calibrated,
+        )
     Column(
         Modifier
             .fillMaxSize()
@@ -78,14 +80,9 @@ fun SetupScreen() {
             }
         }
         Button(
-            onClick = {
-                val body = FIVE_KEYS.joinToString("\n") { midi ->
-                    "${letterOf(midi)}  ${displayNoteName(midi)}  ${keyColorHex(midi)}"
-                }
-                FileExporter.shareText(context, "stickers.txt", body, mime = "text/plain")
-            },
+            onClick = { FileExporter.shareStickerPdf(context) },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("Share sticker labels") }
+        ) { Text("Share stickers PDF") }
         Text(
             "Colour is never the only signal. The letter and the on-screen keyboard say which key to press.",
             style = MaterialTheme.typography.bodySmall,

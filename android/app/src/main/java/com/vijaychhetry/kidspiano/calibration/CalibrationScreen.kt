@@ -33,9 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.vijaychhetry.kidspiano.core.diagnostics.calibrationToJson
 import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
 import com.vijaychhetry.kidspiano.core.notes.selectableMidi
 import com.vijaychhetry.kidspiano.core.pitch.levelFraction
+import com.vijaychhetry.kidspiano.export.FileExporter
 import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -123,7 +125,7 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
                 Column(Modifier.padding(12.dp)) {
                     profile.notes.forEach { note ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("MIDI ${note.midiNote}", style = MaterialTheme.typography.bodySmall)
+                            Text(midiToNoteName(note.midiNote), style = MaterialTheme.typography.bodySmall)
                             Text(
                                 "median %.1f Hz · spread %.1f Hz · %d samples".format(
                                     note.observedMedianFrequency,
@@ -136,6 +138,12 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
                     }
                 }
             }
+            Button(
+                onClick = {
+                    FileExporter.shareText(context, "calibration.json", calibrationToJson(profile))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Share this profile") }
         }
 
         ProgressBar(state.progress)
