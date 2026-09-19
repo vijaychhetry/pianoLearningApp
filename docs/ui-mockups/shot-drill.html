@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="kids.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="bar-top">
+      <span class="back">‹ Map</span>
+      <div class="stars" style="font-size:15px">Level 3 · Mix it up</div>
+    </div>
+    <div class="prompt">Play this key</div>
+    <div class="hero" style="color:#e5484d">C4</div>
+    <div class="cue no">↺</div>
+    <div class="feedback">That was <span class="wrongkey">E4</span>. Press C4.</div>
+    <div class="pips" id="pips"></div>
+    <div id="kb"></div>
+    <p class="sub" style="text-align:center;margin-top:14px">
+      The key you pressed is ringed in amber.
+    </p>
+  </div>
+  <script src="kids-keyboard.js"></script>
+  <script>
+    document.getElementById("pips").innerHTML = [
+      "done", "done", "done", "now", "", "", "", "",
+    ].map((c) => `<span class="pip ${c}"></span>`).join("");
+    renderKids(document.getElementById("kb"), 60, 64);
+  </script>
+</body>
+</html>

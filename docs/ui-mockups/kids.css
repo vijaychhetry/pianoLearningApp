@@ -1,0 +1,151 @@
+:root {
+  --purple: #5b3cc4;
+  --cream: #fff6f0;
+  --surface: #fffbfa;
+  --ink: #1e1633;
+  --muted: #6b6280;
+  --line: #ece0d6;
+  --c: #e5484d;
+  --d: #f76b15;
+  --e: #e8b931;
+  --f: #2fa84f;
+  --g: #3a7dde;
+  --amber: #f2a20c;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Segoe UI", "Avenir Next", sans-serif;
+}
+.phone { width: 390px; height: 844px; padding: 22px 20px 16px; }
+.bar-top { display: flex; justify-content: space-between; align-items: center; }
+.back { color: var(--purple); font-weight: 700; font-size: 16px; }
+h1 { margin: 0; font-size: 26px; letter-spacing: -0.3px; }
+.sub { color: var(--muted); font-size: 15px; margin: 2px 0 0; }
+
+/* level map */
+.path { margin-top: 14px; position: relative; }
+.stop {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 2px solid var(--line);
+  border-radius: 20px; padding: 10px 14px; margin-bottom: 10px;
+  width: 300px;
+}
+.stop.right { margin-left: 50px; }
+.stop.now { border-color: var(--purple); box-shadow: 0 6px 18px rgba(91,60,196,0.18); }
+.stop.locked { opacity: 0.42; }
+.badge {
+  width: 44px; height: 44px; border-radius: 50%; flex: 0 0 44px;
+  display: grid; place-items: center; font-weight: 800; font-size: 19px; color: #fff;
+  background: var(--purple);
+}
+.stop-body { flex: 1; min-width: 0; }
+.stop-title { font-weight: 700; font-size: 15px; }
+.dots { display: flex; gap: 4px; margin-top: 5px; }
+.dot { width: 13px; height: 13px; border-radius: 50%; }
+.stars { font-size: 14px; letter-spacing: 1px; color: #e8b931; }
+.stars .off { color: #ded3ca; }
+.lock { font-size: 18px; color: var(--muted); }
+
+/* drill */
+.prompt { text-align: center; color: var(--muted); font-size: 16px; margin-top: 14px; }
+.hero { text-align: center; font-size: 104px; font-weight: 800; line-height: 1; margin: 2px 0 0; }
+.cue {
+  width: 58px; height: 58px; border-radius: 50%; margin: 10px auto 0;
+  display: grid; place-items: center; font-size: 30px;
+}
+.cue.ok { background: #d9f0e4; color: #1f8a5b; }
+.cue.no { background: #fde6cd; color: #b96a05; }
+.feedback { text-align: center; font-size: 23px; font-weight: 700; margin-top: 8px; }
+.feedback .wrongkey { color: var(--amber); }
+.pips { display: flex; gap: 6px; justify-content: center; margin: 14px 0 12px; }
+.pip { width: 17px; height: 17px; border-radius: 50%; background: #e6dbd2; }
+.pip.done { background: #1f8a5b; }
+.pip.now { background: var(--purple); transform: scale(1.18); }
+
+/* keyboard */
+.kb { background: #1a1524; border-radius: 14px; padding: 9px 9px 10px; }
+.mini { position: relative; height: 42px; margin-bottom: 9px; }
+.mini-w { display: flex; height: 26px; }
+.mini-w > i { flex: 1 1 0; background: #fff; border: 1px solid #b9b1a8; box-sizing: border-box; }
+.mini-w > i.dim { opacity: 0.3; }
+.mini-b { position: absolute; top: 0; width: 6px; height: 15px; background: #100d18; }
+.mini-l { display: flex; height: 13px; color: #efeaf6; font-size: 8px; }
+.mini-l > span { flex: 1 1 0; text-align: center; }
+.zoom { position: relative; height: 126px; padding-top: 20px; }
+.zoom-w { display: flex; height: 104px; }
+.zoom-w > i {
+  flex: 1 1 0; background: #fff; border: 1px solid #b9b1a8;
+  position: relative; box-sizing: border-box; border-radius: 0 0 4px 4px;
+}
+.zoom-b { position: absolute; top: 20px; width: 15px; height: 64px; background: #100d18; border-radius: 0 0 3px 3px; }
+.kname {
+  position: absolute; bottom: 6px; left: 0; right: 0; text-align: center;
+  font-size: 10px; font-weight: 800; color: #4a4258;
+}
+.zoom-w > i.taught .kname { color: #fff; }
+.callout {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  color: #fff; font-size: 12px; font-weight: 800; padding: 2px 7px; border-radius: 8px;
+  white-space: nowrap;
+}
+.flash { box-shadow: inset 0 0 0 3px var(--amber); }
+
+/* song */
+.song-strip { display: flex; gap: 10px; overflow: hidden; padding: 16px 0 6px; align-items: flex-end; }
+.note { text-align: center; flex: 0 0 auto; opacity: 0.55; }
+.note .bub {
+  width: 40px; height: 40px; border-radius: 50%; color: #fff;
+  display: grid; place-items: center; font-weight: 800; font-size: 14px; margin: 0 auto;
+}
+.note .syl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.note.done { opacity: 0.95; }
+.note.done .bub::after { content: ""; }
+.note.now { opacity: 1; }
+.note.now .bub { width: 56px; height: 56px; font-size: 19px; box-shadow: 0 0 0 4px rgba(91,60,196,0.28); }
+.note.now .syl { font-weight: 800; color: var(--ink); font-size: 13px; }
+.tick { font-size: 11px; color: #1f8a5b; }
+
+/* falling game */
+.field {
+  position: relative; height: 330px; margin-top: 12px;
+  background: linear-gradient(#f4ecfb, #fff6f0);
+  border-radius: 18px; overflow: hidden; border: 2px solid #e6dcf3;
+}
+.lane { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(91,60,196,0.1); }
+.tile {
+  position: absolute; width: 56px; height: 44px; border-radius: 12px;
+  color: #fff; font-weight: 800; font-size: 18px;
+  display: grid; place-items: center; box-shadow: 0 5px 12px rgba(30,22,51,0.2);
+}
+/* The line sits well clear of the bottom edge: a tile keeps falling past it,
+   fading, for as long as its hit window stays open. */
+.hitline {
+  position: absolute; left: 0; right: 0; bottom: 62px; height: 5px;
+  background: repeating-linear-gradient(90deg, var(--purple) 0 12px, #d9ccf5 12px 24px);
+  border-radius: 3px;
+}
+.hitlabel {
+  position: absolute; right: 10px; bottom: 42px; font-size: 12px;
+  color: var(--purple); font-weight: 800;
+}
+.combo { text-align: center; font-size: 17px; font-weight: 800; margin-top: 10px; }
+
+/* summary */
+.burst { text-align: center; margin-top: 26px; }
+.burst .big { font-size: 52px; letter-spacing: 6px; color: #e8b931; }
+.burst h2 { margin: 6px 0 2px; font-size: 30px; }
+.card {
+  background: var(--surface); border: 2px solid var(--line); border-radius: 18px;
+  padding: 16px; margin-top: 16px;
+}
+.card h3 { margin: 0 0 6px; font-size: 17px; }
+.card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.btn {
+  display: block; width: 100%; text-align: center; padding: 14px 0; border-radius: 14px;
+  font-weight: 800; font-size: 17px; margin-top: 10px; border: 2px solid var(--purple);
+}
+.btn.solid { background: var(--purple); color: #fff; }
+.btn.hollow { background: #fff; color: var(--purple); }

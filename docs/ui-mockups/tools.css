@@ -1,0 +1,38 @@
+/* Shared bits for the grown-up screens and Home. Layered on kids.css. */
+.tabs { display: flex; gap: 8px; margin: 14px 0 6px; }
+.tab {
+  flex: 1; text-align: center; padding: 9px 0; border-radius: 12px;
+  font-weight: 700; font-size: 14px; border: 2px solid var(--line); color: var(--muted);
+  background: #fff;
+}
+.tab.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+.rows { margin-top: 10px; }
+.row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px;
+}
+.row .k { color: var(--muted); }
+.row .v { font-weight: 700; }
+.input {
+  width: 100%; border: 2px solid var(--line); border-radius: 12px;
+  padding: 13px 14px; font-size: 17px; background: #fff; color: var(--ink);
+}
+.input .ph { color: #b7aec4; }
+.fieldlabel { font-size: 12px; color: var(--muted); margin: 0 0 5px 3px; font-weight: 700; }
+.log { background: #1a1524; border-radius: 12px; padding: 10px 12px; margin-top: 8px; }
+.log div {
+  color: #d9d2e6; font-family: "SF Mono", Menlo, monospace; font-size: 11px;
+  padding: 3px 0; display: flex; justify-content: space-between;
+}
+.log div .ok { color: #6fd39b; }
+.log div .no { color: #f2a20c; }
+.pill {
+  display: inline-block; padding: 4px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 800;
+}
+.pill.good { background: #d9f0e4; color: #1f8a5b; }
+.btnrow { display: flex; gap: 8px; margin-top: 12px; }
+.btnrow .btn { margin-top: 0; font-size: 15px; padding: 11px 0; }
+.hero-home {
+  font-size: 40px; font-weight: 800; text-align: center; margin: 0; letter-spacing: -0.5px;
+}
