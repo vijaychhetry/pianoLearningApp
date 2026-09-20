@@ -15,8 +15,13 @@ import com.vijaychhetry.kidspiano.core.learning.LessonSession
 import com.vijaychhetry.kidspiano.core.learning.LessonSnapshot
 import com.vijaychhetry.kidspiano.core.learning.lessonMayStart
 import com.vijaychhetry.kidspiano.core.learning.lessonSessionFor
+import com.vijaychhetry.kidspiano.core.notes.DEFAULT_LESSON_SET_ID
+import com.vijaychhetry.kidspiano.core.notes.LessonSet
 import com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi
+import com.vijaychhetry.kidspiano.core.notes.lessonSetById
 import com.vijaychhetry.kidspiano.core.notes.lessonSets
+import com.vijaychhetry.kidspiano.core.notes.nextLessonSet
+import com.vijaychhetry.kidspiano.core.notes.promptsFor
 import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
 import com.vijaychhetry.kidspiano.export.SessionLogStore
 import kotlinx.coroutines.CancellationException
@@ -53,6 +58,8 @@ data class LessonUiState(
     val heardMidi: Int? = null,
     val line2: String? = null,
     val lessonSetLabel: String = "C4–G4 (first)",
+    val lessonSetShort: String = "C4–G4",
+    val nextLabel: String? = "C4–G4 mix",
 )
 
 class LessonViewModel(app: Application) : AndroidViewModel(app) {
@@ -61,6 +68,8 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     private val logStore = SessionLogStore(app)
     private val control = Mutex()
     private var session: LessonSession? = null
+    private var profile: CalibrationProfile? = null
+    private var currentSet: LessonSet = lessonSetById(DEFAULT_LESSON_SET_ID)
     private var notes: List<Int> = defaultLessonMidi()
     private var lastLoggedOnset: Long? = null
     private var lastHeardMs = 0L
@@ -72,19 +81,18 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(LessonUiState())
     val state: StateFlow<LessonUiState> = _state
 
-    fun useProfile(profile: CalibrationProfile?, lessonNotes: List<Int> = defaultLessonMidi()) {
-        if (session != null && notes == lessonNotes && _state.value.ready) return
-        notes = lessonNotes
+    fun useProfile(profile: CalibrationProfile?, setId: String = DEFAULT_LESSON_SET_ID) {
+        this.profile = profile
+        val set = lessonSetById(setId)
+        if (session != null && currentSet.id == set.id && _state.value.ready && !set.shuffle) return
+        currentSet = set
+        notes = promptsFor(set, System.currentTimeMillis())
         if (!lessonMayStart(profile) || profile == null) {
             session = null
             _state.value = LessonUiState()
             return
         }
-        val next = lessonSessionFor(profile, notes)
-        session = next
-        sessionId = "s-${System.currentTimeMillis()}"
-        lastLoggedOnset = null
-        _state.value = next.snapshot().toUi(ready = true, running = false)
+        openSession(profile, set)
     }
 
     fun start() {
@@ -115,8 +123,35 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     fun playAgain() {
         viewModelScope.launch {
             control.withLock {
-                session?.restart()
+                val p = profile
+                if (p != null && currentSet.shuffle) {
+                    openSession(p, currentSet)
+                } else {
+                    session?.restart()
+                }
                 if (wantRunning) {
+                    session?.begin(System.currentTimeMillis())
+                    session?.snapshot()?.let { publish(it, running = true) }
+                } else {
+                    wantRunning = true
+                    sources.reset()
+                    beginCapture()
+                    startTicker()
+                }
+            }
+        }
+    }
+
+    fun nextCourse(saveSetId: (String) -> Unit) {
+        val next = nextLessonSet(currentSet.id) ?: return
+        val p = profile ?: return
+        saveSetId(next.id)
+        viewModelScope.launch {
+            control.withLock {
+                currentSet = next
+                openSession(p, next)
+                if (wantRunning) {
+                    session?.begin(System.currentTimeMillis())
                     session?.snapshot()?.let { publish(it, running = true) }
                 } else {
                     wantRunning = true
@@ -153,6 +188,15 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
         collectJob?.cancel()
         input.stop()
         super.onCleared()
+    }
+
+    private fun openSession(profile: CalibrationProfile, set: LessonSet) {
+        notes = promptsFor(set, System.currentTimeMillis())
+        val next = lessonSessionFor(profile, notes, set.completionCopy)
+        session = next
+        sessionId = "s-${System.currentTimeMillis()}"
+        lastLoggedOnset = null
+        _state.value = next.snapshot().toUi(ready = true, running = false)
     }
 
     private fun startTicker() {
@@ -274,8 +318,9 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
         expectedMidi = expectedMidi,
         heardMidi = heardMidi,
         line2 = line2,
-        lessonSetLabel = lessonSets().firstOrNull { it.second == notes }?.first
-            ?: "C4–G4 (first)",
+        lessonSetLabel = currentSet.label,
+        lessonSetShort = currentSet.shortLabel,
+        nextLabel = nextLessonSet(currentSet.id)?.label,
     )
 
     private fun logIfNeeded(snapshot: LessonSnapshot) {
@@ -291,7 +336,7 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
                     sessionId = sessionId,
                     appVersion = BuildConfig.VERSION_NAME,
                     activity = "learn",
-                    levelId = 1,
+                    levelId = lessonSets().indexOfFirst { it.id == currentSet.id }.coerceAtLeast(0) + 1,
                     promptIndex = snapshot.completedCount,
                     expectedMidi = if (verdict is com.vijaychhetry.kidspiano.core.common.Verdict.Correct) {
                         notes.getOrNull(snapshot.completedCount - 1) ?: snapshot.expectedMidi

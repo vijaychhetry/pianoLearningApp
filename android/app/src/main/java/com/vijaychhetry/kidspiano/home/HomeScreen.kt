@@ -22,6 +22,7 @@ import com.vijaychhetry.kidspiano.ui.HoldButton
 fun HomeScreen(
     pianoReady: Boolean,
     setupSummary: String?,
+    courseLabel: String,
     onPractice: () -> Unit,
     onGrownUps: () -> Unit,
 ) {
@@ -45,6 +46,13 @@ fun HomeScreen(
                 .height(64.dp),
         ) {
             Text("Practice", fontSize = 22.sp)
+        }
+        if (pianoReady) {
+            Text(
+                courseLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
         Text(
             if (pianoReady) setupSummary ?: Copy.READY else Copy.NOT_CALIBRATED,

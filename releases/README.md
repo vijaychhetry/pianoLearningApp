@@ -2,11 +2,11 @@
 
 Debug build of **Kids Piano**. Not a Play Store release.
 
-**Download (0.5.4 — latest, compact Practice on main):** [KidsPiano-debug-0.5.4.apk](./KidsPiano-debug-0.5.4.apk)
+**Download (0.5.5 — latest, Next course after the five keys):** [KidsPiano-debug-0.5.5.apk](./KidsPiano-debug-0.5.5.apk)
 
 On GitHub, open that file and use **Download raw file**. On a phone, you can also use the raw URL for this branch:
 
-https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/merge-all-to-main-5032/releases/KidsPiano-debug-0.5.4.apk
+https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/merge-all-to-main-5032/releases/KidsPiano-debug-0.5.5.apk
 
 Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug build first if the installer refuses (same package id `com.vijaychhetry.kidspiano`).
 
@@ -17,7 +17,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 3. **Setup** — put the phone on the stand, stick the five colour labels on **C4 D4 E4 F4 G4**, share the sticker list if you want a printout.
 4. **Calibrate** — pick the key from the dropdown if you need to jump. Play four separate presses of each asked key (press, let go, press again). The on-screen keyboard shows which physical key.
 5. **Files** — share the calibration JSON and the session log (JSON only, no recordings).
-6. **Kids Home → Practice**. The phone turns **landscape**. Play the glowing key on the Yamaha. The big letter is `C`; under it it says `C4 · middle C`.
+6. **Kids Home → Practice**. The phone turns **landscape**. Play the glowing key on the Yamaha. The big letter is `C`; under it it says `C4 · middle C`. After all five keys, tap **Next** for the mix course, then the lower C3–G3 course. **Done** goes Home. **Play again** repeats this course.
 
 **Audio Lab** is still under Grown-ups. It is an engineering readout, not a lesson.
 
@@ -32,6 +32,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 
 | Version | Notes |
 | --- | --- |
+| 0.5.5 | After C4–G4, **Next** starts the next course (mix, then C3–G3). **Done** is a real button that goes Home. |
 | 0.5.4 | Merged the 0.5.x product onto main. Practice packs from the top (less cream) with a smaller keyboard. Do not install 0.4.0-lab — that was a side fork of Audio Lab, not a rollback. |
 | 0.5.3 | Practice is stacked (piano top-center, letter/feedback below) and kept out of the front camera. C4 with a loud 2nd harmonic counts as C4; early TWO_NOTES from piano partials is gone. |
 | 0.5.2 | Landscape Practice is one screen: letter, feedback, and keyboard all fit. No scroll. |

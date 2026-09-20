@@ -35,7 +35,7 @@ fun FilesScreen() {
     var lines by remember { mutableIntStateOf(logStore.lineCount()) }
     var setOpen by remember { mutableStateOf(false) }
     var lessonLabel by remember {
-        mutableStateOf(lessonSets().firstOrNull { it.second == store.lessonMidi() }?.first ?: "C4–G4 (first)")
+        mutableStateOf(store.lessonSet().label)
     }
     val profile = remember { store.load() }
 
@@ -57,13 +57,13 @@ fun FilesScreen() {
                 Text(lessonLabel)
             }
             DropdownMenu(expanded = setOpen, onDismissRequest = { setOpen = false }) {
-                lessonSets().forEach { (label, notes) ->
+                lessonSets().forEach { set ->
                     DropdownMenuItem(
-                        text = { Text(label) },
+                        text = { Text(set.label) },
                         onClick = {
                             setOpen = false
-                            store.saveLessonMidi(notes)
-                            lessonLabel = label
+                            store.saveLessonSetId(set.id)
+                            lessonLabel = set.label
                         },
                     )
                 }

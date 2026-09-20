@@ -49,8 +49,33 @@ class CalibrationStore(context: Context) {
         return parsed.ifEmpty { com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi() }
     }
 
+    fun lessonSetId(): String {
+        prefs.getString(KEY_SET, null)?.let { return it }
+        val midi = lessonMidi()
+        return com.vijaychhetry.kidspiano.core.notes.lessonSets()
+            .firstOrNull { it.notes == midi && !it.shuffle }
+            ?.id
+            ?: com.vijaychhetry.kidspiano.core.notes.DEFAULT_LESSON_SET_ID
+    }
+
+    fun lessonSet(): com.vijaychhetry.kidspiano.core.notes.LessonSet =
+        com.vijaychhetry.kidspiano.core.notes.lessonSetById(lessonSetId())
+
+    fun saveLessonSetId(id: String) {
+        val set = com.vijaychhetry.kidspiano.core.notes.lessonSetById(id)
+        prefs.edit()
+            .putString(KEY_SET, set.id)
+            .putString(KEY_LESSON, set.notes.joinToString(","))
+            .apply()
+    }
+
     fun saveLessonMidi(notes: List<Int>) {
-        prefs.edit().putString(KEY_LESSON, notes.joinToString(",")).apply()
+        val match = com.vijaychhetry.kidspiano.core.notes.lessonSets()
+            .firstOrNull { it.notes == notes && !it.shuffle }
+        prefs.edit()
+            .putString(KEY_LESSON, notes.joinToString(","))
+            .putString(KEY_SET, match?.id ?: lessonSetId())
+            .apply()
     }
 
     fun clear() = prefs.edit().clear().apply()
@@ -62,5 +87,6 @@ class CalibrationStore(context: Context) {
         const val KEY_SAMPLE_RATE = "sampleRate"
         const val KEY_SAVED_AT = "savedAt"
         const val KEY_LESSON = "lessonMidi"
+        const val KEY_SET = "lessonSet"
     }
 }

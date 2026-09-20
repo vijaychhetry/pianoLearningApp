@@ -114,6 +114,7 @@ private fun KidsPianoApp() {
                 Dest.HOME -> HomeScreen(
                     pianoReady = pianoReady,
                     setupSummary = store.summary(),
+                    courseLabel = store.lessonSet().label,
                     onPractice = { dest = Dest.PRACTICE },
                     onGrownUps = { dest = Dest.GATE },
                 )

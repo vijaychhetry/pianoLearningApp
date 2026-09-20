@@ -21,7 +21,7 @@ Phase 3 start: **Level 1 Find this key** (C D E F G) for the child.
 
 ## Download APK (no Android Studio)
 
-A debug APK is in [`releases/KidsPiano-debug-0.5.4.apk`](../releases/KidsPiano-debug-0.5.4.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
+A debug APK is in [`releases/KidsPiano-debug-0.5.5.apk`](../releases/KidsPiano-debug-0.5.5.apk). On GitHub, open the file and click **Download raw file**, then install it on the phone (allow install from that source). Allow **Microphone** when the app asks.
 
 Uninstall an older **Kids Piano** build first if the installer refuses. Do **not** install `KidsPianoLab-debug-0.4.0.apk` — that was a side fork of Audio Lab, not the current product.
 
@@ -29,7 +29,7 @@ Uninstall an older **Kids Piano** build first if the installer refuses. Do **not
 
 **Home** — **Practice** (C4–G4, one key at a time) once a grown-up has calibrated. **Grown-ups** is a 2-second hold plus a times-table.
 
-**Practice** — big note name, two-layer keyboard (61-key mini-map + zoom), play that key on the Yamaha. Copy names the octave (`C4`, `E4`). Unclear / two notes / too quiet is never marked wrong. Colour is never the only signal.
+**Practice** — big note name, two-layer keyboard (61-key mini-map + zoom), play that key on the Yamaha. Copy names the octave (`C4`, `E4`). After the five keys, **Next** opens the following course (C4–G4 mix, then C3–G3). **Done** goes Home. Unclear / two notes / too quiet is never marked wrong. Colour is never the only signal.
 
 ## Grown-up tools (unchanged job)
 

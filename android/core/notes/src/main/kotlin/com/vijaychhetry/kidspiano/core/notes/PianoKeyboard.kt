@@ -28,14 +28,66 @@ fun selectableMidi(): List<Int> =
 
 fun hearable(midi: Int): Boolean = midi in HEARABLE_LOW_MIDI..HEARABLE_HIGH_MIDI
 
+const val DEFAULT_LESSON_SET_ID = "c4g4"
+
+data class LessonSet(
+    val id: String,
+    val label: String,
+    val shortLabel: String,
+    val notes: List<Int>,
+    val shuffle: Boolean = false,
+    val completionCopy: String,
+)
+
 fun defaultLessonMidi(): List<Int> = FIVE_KEYS
 
 fun lowerClusterLessonMidi(): List<Int> = LOWER_CLUSTER
 
-fun lessonSets(): List<Pair<String, List<Int>>> = listOf(
-    "C4–G4 (first)" to defaultLessonMidi(),
-    "C3–G3 (lower)" to lowerClusterLessonMidi(),
+fun lessonSets(): List<LessonSet> = listOf(
+    LessonSet(
+        id = DEFAULT_LESSON_SET_ID,
+        label = "C4–G4 (first)",
+        shortLabel = "C4–G4",
+        notes = defaultLessonMidi(),
+        completionCopy = "You found all five keys!",
+    ),
+    LessonSet(
+        id = "c4g4-mix",
+        label = "C4–G4 mix",
+        shortLabel = "Mix",
+        notes = defaultLessonMidi(),
+        shuffle = true,
+        completionCopy = "You mixed up C D E F G!",
+    ),
+    LessonSet(
+        id = "c3g3",
+        label = "C3–G3 (lower)",
+        shortLabel = "C3–G3",
+        notes = lowerClusterLessonMidi(),
+        completionCopy = "You found the lower five keys!",
+    ),
 )
+
+fun lessonSetById(id: String): LessonSet =
+    lessonSets().firstOrNull { it.id == id } ?: lessonSets().first()
+
+fun nextLessonSet(id: String): LessonSet? {
+    val sets = lessonSets()
+    val index = sets.indexOfFirst { it.id == id }
+    if (index < 0 || index >= sets.lastIndex) return null
+    return sets[index + 1]
+}
+
+fun promptsFor(set: LessonSet, seed: Long): List<Int> {
+    if (!set.shuffle) return set.notes
+    val out = set.notes.toMutableList()
+    out.shuffle(kotlin.random.Random(seed))
+    if (out == set.notes && out.size > 1) {
+        val first = out.removeAt(0)
+        out.add(first)
+    }
+    return out
+}
 
 /** Zoom strip: ~15 whites around the target, always including it. */
 fun zoomWindow(centerMidi: Int = KEY_C4): Pair<Int, Int> {

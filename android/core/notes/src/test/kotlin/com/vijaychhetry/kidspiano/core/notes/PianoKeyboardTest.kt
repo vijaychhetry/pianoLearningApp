@@ -39,11 +39,27 @@ class PianoKeyboardTest {
     }
 
     @Test
-    fun acKey04_twoLessonSetsAreC4ClusterAndC3Cluster() {
+    fun acKey04_lessonSetsAreC4ThenMixThenC3() {
         val sets = lessonSets()
-        assertEquals(2, sets.size)
-        assertEquals(listOf(60, 62, 64, 65, 67), sets[0].second)
-        assertEquals(listOf(48, 50, 52, 53, 55), sets[1].second)
+        assertEquals(3, sets.size)
+        assertEquals(listOf(60, 62, 64, 65, 67), sets[0].notes)
+        assertTrue(sets[1].shuffle)
+        assertEquals(listOf(48, 50, 52, 53, 55), sets[2].notes)
+        assertEquals("c4g4-mix", nextLessonSet("c4g4")?.id)
+        assertEquals("c3g3", nextLessonSet("c4g4-mix")?.id)
+        assertEquals(null, nextLessonSet("c3g3"))
+    }
+
+    @Test
+    fun acKey04b_mixPromptsAreAPermutationAndStableForASeed() {
+        val mix = lessonSetById("c4g4-mix")
+        val a = promptsFor(mix, 7L)
+        val b = promptsFor(mix, 7L)
+        assertEquals(a, b)
+        assertEquals(mix.notes.toSet(), a.toSet())
+        assertEquals(5, a.size)
+        assertEquals(5, a.distinct().size)
+        assertEquals(mix.notes, promptsFor(lessonSetById("c4g4"), 99L))
     }
 
     @Test

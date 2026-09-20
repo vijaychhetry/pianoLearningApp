@@ -59,7 +59,7 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
         ActivityResultContracts.RequestPermission(),
     ) { granted -> if (granted) model.start() }
     LaunchedEffect(Unit) {
-        model.useProfile(store.load(), store.lessonMidi())
+        model.useProfile(store.load(), store.lessonSetId())
     }
     LaunchedEffect(state.ready) {
         if (!state.ready || state.running || state.complete) return@LaunchedEffect
@@ -126,10 +126,21 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                     modifier = Modifier.height(36.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) { Text("Home") }
-                Text(
-                    if (state.complete) "Done" else "${state.completedCount}/${state.total}",
-                    style = MaterialTheme.typography.labelMedium,
-                )
+                if (state.complete) {
+                    TextButton(
+                        onClick = {
+                            model.stop()
+                            onHome()
+                        },
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    ) { Text("Done") }
+                } else {
+                    Text(
+                        "${state.lessonSetShort}  ${state.completedCount}/${state.total}",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
             }
             PianoKeyboardView(
                 highlightMidi = state.expectedMidi,
@@ -171,6 +182,24 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            if (state.complete && state.nextLabel != null) {
+                Text(
+                    "Next: ${state.nextLabel}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            } else if (state.complete) {
+                Text(
+                    "That's all the courses for now.",
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
             Spacer(Modifier.weight(1f))
             Box(
                 Modifier
@@ -201,11 +230,17 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (state.complete) {
-                    Button(
+                    OutlinedButton(
                         onClick = { model.playAgain() },
-                        colors = compactBtn,
                         modifier = Modifier.height(40.dp),
                     ) { Text("Play again") }
+                    if (state.nextLabel != null) {
+                        Button(
+                            onClick = { model.nextCourse { store.saveLessonSetId(it) } },
+                            colors = compactBtn,
+                            modifier = Modifier.height(40.dp),
+                        ) { Text("Next") }
+                    }
                 } else if (!state.running) {
                     Button(
                         onClick = {

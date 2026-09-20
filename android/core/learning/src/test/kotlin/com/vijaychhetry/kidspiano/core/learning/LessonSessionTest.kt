@@ -224,6 +224,25 @@ class LessonPolicyTest {
         assertEquals(50, snap.expectedMidi)
         assertTrue(snap.feedback.contains("Yes"), "got: ${snap.feedback}")
     }
+
+    @Test
+    fun acLearn12b_nextCourseAfterC4G4IsMixThenLower() {
+        assertEquals("c4g4-mix", com.vijaychhetry.kidspiano.core.notes.nextLessonSet("c4g4")?.id)
+        val mix = com.vijaychhetry.kidspiano.core.notes.promptsFor(
+            com.vijaychhetry.kidspiano.core.notes.lessonSetById("c4g4-mix"),
+            11L,
+        )
+        val session = LessonSession(notes = mix, completionCopy = "You mixed up C D E F G!")
+        session.begin(0)
+        var frame = 0
+        var snap = session.snapshot()
+        for (midi in mix) {
+            snap = playPress(session, midi, frame).also { frame += PRESS_FRAMES }
+        }
+        assertTrue(snap.complete)
+        assertEquals("You mixed up C D E F G!", snap.feedback)
+        assertEquals("c3g3", com.vijaychhetry.kidspiano.core.notes.nextLessonSet("c4g4-mix")?.id)
+    }
 }
 
 class ParentGateTest {
