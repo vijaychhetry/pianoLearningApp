@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -101,11 +102,10 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        val heroSp = (maxHeight.value * 0.14f).coerceIn(32f, 48f).sp
-        val pianoHeight = (maxHeight * 0.38f).coerceIn(112.dp, 160.dp)
+        val heroSp = (maxHeight.value * 0.12f).coerceIn(28f, 44f).sp
+        val pianoHeight = (maxHeight * 0.28f).coerceIn(88.dp, 120.dp)
         val compactBtn = ButtonDefaults.buttonColors()
         Column(
             Modifier
@@ -123,61 +123,55 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                         model.stop()
                         onHome()
                     },
-                    contentPadding = ButtonDefaults.TextButtonContentPadding,
+                    modifier = Modifier.height(36.dp),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) { Text("Home") }
                 Text(
                     if (state.complete) "Done" else "${state.completedCount}/${state.total}",
                     style = MaterialTheme.typography.labelMedium,
                 )
             }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            PianoKeyboardView(
+                highlightMidi = state.expectedMidi,
+                heardMidi = state.heardMidi,
+                compact = true,
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .height(pianoHeight),
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                letter,
+                fontSize = heroSp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+                lineHeight = heroSp,
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(0.86f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
             ) {
-                PianoKeyboardView(
-                    highlightMidi = state.expectedMidi,
-                    heardMidi = state.heardMidi,
-                    compact = true,
-                    modifier = Modifier
-                        .fillMaxWidth(0.92f)
-                        .height(pianoHeight),
-                )
-                Spacer(Modifier.height(8.dp))
+                CueBadge(state.cue)
                 Text(
-                    letter,
-                    fontSize = heroSp,
-                    fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    lineHeight = heroSp,
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.titleSmall,
+                    state.feedback,
+                    modifier = Modifier.padding(start = 8.dp),
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(0.86f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    CueBadge(state.cue)
-                    Text(
-                        state.feedback,
-                        modifier = Modifier.padding(start = 8.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
+            Spacer(Modifier.weight(1f))
             Box(
                 Modifier
                     .fillMaxWidth(0.7f)

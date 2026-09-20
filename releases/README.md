@@ -2,11 +2,11 @@
 
 Debug build of **Kids Piano**. Not a Play Store release.
 
-**Download (0.5.3 — C4 recognition + stacked Practice):** [KidsPiano-debug-0.5.3.apk](./KidsPiano-debug-0.5.3.apk)
+**Download (0.5.4 — latest, compact Practice on main):** [KidsPiano-debug-0.5.4.apk](./KidsPiano-debug-0.5.4.apk)
 
 On GitHub, open that file and use **Download raw file**. On a phone, you can also use the raw URL for this branch:
 
-https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/spec-v4-050-2211/releases/KidsPiano-debug-0.5.3.apk
+https://github.com/vijaychhetry/pianoLearningApp/raw/cursor/merge-all-to-main-5032/releases/KidsPiano-debug-0.5.4.apk
 
 Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug build first if the installer refuses (same package id `com.vijaychhetry.kidspiano`).
 
@@ -32,6 +32,7 @@ Install it and allow **Microphone**. Uninstall an older **Kids Piano** debug bui
 
 | Version | Notes |
 | --- | --- |
+| 0.5.4 | Merged the 0.5.x product onto main. Practice packs from the top (less cream) with a smaller keyboard. Do not install 0.4.0-lab — that was a side fork of Audio Lab, not a rollback. |
 | 0.5.3 | Practice is stacked (piano top-center, letter/feedback below) and kept out of the front camera. C4 with a loud 2nd harmonic counts as C4; early TWO_NOTES from piano partials is gone. |
 | 0.5.2 | Landscape Practice is one screen: letter, feedback, and keyboard all fit. No scroll. |
 | 0.5.1 | Practice (and later games) lock to landscape so the keyboard no longer overlaps. Home, Setup, Calibrate, Files, and Audio Lab stay portrait. |
