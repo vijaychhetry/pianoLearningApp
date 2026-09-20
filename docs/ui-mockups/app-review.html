@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Kids Piano — app description and screen review</title>
+  <style>
+    @page { size: A4; margin: 14mm 15mm 16mm; }
+    :root {
+      --purple: #5b3cc4;
+      --ink: #1e1633;
+      --muted: #5f5775;
+      --line: #ded5ea;
+      --cream: #fdf7f3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--ink); background: #fff;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      font-size: 10.5pt; line-height: 1.5;
+    }
+    h1, h2, h3 { margin: 0; letter-spacing: -0.2px; }
+    p { margin: 0 0 8px; }
+    code { font-family: "SF Mono", Menlo, monospace; font-size: 9.2pt; background: #f2edf9; padding: 1px 4px; border-radius: 3px; }
+    .page { page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+
+    /* cover */
+    .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+    .cover .keys { display: flex; gap: 9px; margin-bottom: 20px; }
+    .cover .keys span { width: 34px; height: 34px; border-radius: 50%; }
+    .cover h1 { font-size: 34pt; line-height: 1.05; }
+    .cover .sub { font-size: 14pt; color: var(--muted); margin-top: 10px; }
+    .cover .meta { margin-top: 34px; border-top: 2px solid var(--line); padding-top: 14px; }
+    .cover .meta div { display: flex; gap: 14px; padding: 3px 0; }
+    .cover .meta b { width: 130px; color: var(--muted); font-weight: 600; }
+
+    /* section pages */
+    .sect-title { font-size: 19pt; border-bottom: 3px solid var(--purple); padding-bottom: 7px; margin-bottom: 14px; }
+    h3 { font-size: 12pt; margin: 16px 0 5px; color: var(--purple); }
+    ul { margin: 0 0 8px; padding-left: 17px; }
+    li { margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.6pt; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: #f6f2fc; font-size: 8.8pt; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+    .note {
+      background: var(--cream); border-left: 4px solid var(--purple);
+      padding: 10px 13px; margin: 12px 0; font-size: 10pt;
+    }
+
+    /* screen pages */
+    .screen-head { display: flex; align-items: baseline; gap: 10px; border-bottom: 3px solid var(--purple); padding-bottom: 7px; }
+    .screen-head .n {
+      background: var(--purple); color: #fff; width: 27px; height: 27px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 11pt; flex: 0 0 27px;
+    }
+    .screen-head h2 { font-size: 17pt; flex: 1; }
+    .tag {
+      font-size: 8.5pt; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+      background: #ece4fb; color: var(--purple); white-space: nowrap;
+    }
+    .tag.now { background: #d9f0e4; color: #1a7a50; }
+    .tag.later { background: #fdecd2; color: #96620a; }
+    .who { font-size: 9.5pt; color: var(--muted); margin: 7px 0 11px; }
+    .split { display: flex; gap: 16px; align-items: flex-start; }
+    .shot { flex: 0 0 68mm; }
+    .shot img { width: 68mm; border: 1px solid var(--line); border-radius: 9px; display: block; }
+    .shot .cap { font-size: 8.2pt; color: var(--muted); margin-top: 5px; text-align: center; }
+    .desc { flex: 1; }
+    .desc h4 { margin: 11px 0 4px; font-size: 10.5pt; }
+    .desc h4:first-child { margin-top: 0; }
+    .kv { font-size: 9.6pt; }
+    .kv div { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px dotted var(--line); }
+    .kv b { flex: 0 0 74px; font-weight: 600; color: var(--muted); }
+    .swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<section class="page cover">
+  <div class="keys">
+    <span style="background:#e5484d"></span>
+    <span style="background:#f76b15"></span>
+    <span style="background:#e8b931"></span>
+    <span style="background:#2fa84f"></span>
+    <span style="background:#3a7dde"></span>
+  </div>
+  <h1>Kids Piano</h1>
+  <div class="sub">
+    An Android app that listens to a real piano through the phone microphone
+    and teaches a young child five white keys, one at a time.
+  </div>
+  <div class="meta">
+    <div><b>Document</b><span>Complete app description and every screen, for review before implementation</span></div>
+    <div><b>Date</b><span>19 September 2026</span></div>
+    <div><b>Installed now</b><span>0.4.0 — one practice screen, Calibrate, Audio Lab</span></div>
+    <div><b>Designed</b><span>0.5.0 keyboard guide and export · 0.6.0 level ladder and songs · 0.7.0 falling-notes game</span></div>
+    <div><b>Screens</b><span>11 — 6 for the child, 4 for the grown-up, 1 superseded and shown for comparison</span></div>
+    <div><b>Tested on</b><span>Yamaha PSR-F52</span></div>
+    <div><b>Status</b><span>Pictures are prototypes, not screenshots of a built app. Nothing here is coded yet.</span></div>
+  </div>
+</section>
+
+<!-- ============ WHAT THE APP IS ============ -->
+<section class="page">
+  <h2 class="sect-title">What the app is</h2>
+
+  <p>
+    Kids Piano turns a phone into a patient listening teacher for a child sitting at a
+    real piano. There is no cable and no MIDI. The phone holds up the microphone,
+    works out which note was played, and answers.
+  </p>
+  <p>
+    The whole app teaches <b>five white keys: C4, D4, E4, F4 and G4</b>. Nothing else appears
+    anywhere — not in a level, not in a song, not in the game. Five keys is enough for
+    six real tunes, and few enough that a four-year-old can own each one.
+  </p>
+
+  <h3>How it hears the piano</h3>
+  <p>
+    Audio arrives in blocks of 2048 samples, about 46 milliseconds each. Each block goes
+    through pitch detection, and a note is only named once <b>three blocks in a row agree</b>.
+    That is what stops a single noisy frame from being reported as a wrong answer, and it
+    is why the app waits about a fifth of a second before it responds.
+  </p>
+  <p>
+    One physical press is one judgement. If your child holds a correct C while the app moves
+    on to ask for D, the held C is <i>not</i> counted as a wrong D. They have to lift and press again.
+  </p>
+
+  <h3>The rule that shapes everything</h3>
+  <div class="note">
+    <b>Audio the app cannot understand is never called wrong.</b> Two notes at once, a pitch
+    between two keys, or a sound too quiet to read all get “I couldn’t hear that” — never a
+    cross, never a lost star, never a miss in the game. A child must never be told they made
+    a mistake when the microphone was the problem.
+  </div>
+
+  <h3>Calibration</h3>
+  <p>
+    Before a child can practise, a grown-up calibrates the piano: play each of the five keys
+    four times while the app measures what it actually hears. It learns your piano’s real
+    tuning and stores a profile. A PSR-F52 is close to standard pitch, but an older acoustic
+    piano can sit noticeably sharp or flat, and without this the app would mark correct
+    playing as wrong.
+  </p>
+
+  <h3>Privacy</h3>
+  <p>
+    <b>No audio is ever recorded, stored or sent anywhere.</b> Sound is analysed as it arrives and
+    discarded. The only things written to disk are numbers: your piano’s measured tuning, and
+    a log of which note was asked for and which was heard. There are no accounts, no network
+    calls and no analytics.
+  </p>
+
+  <h3>The five key colours</h3>
+  <p>
+    Each key has one fixed colour, used identically on the keyboard picture, the song strip,
+    the falling tiles and the stars — so coloured paper stickers on the real piano match the screen.
+  </p>
+  <table>
+    <tr><th>Key</th><th>Colour</th><th>Key</th><th>Colour</th><th>Key</th><th>Colour</th></tr>
+    <tr>
+      <td><b>C4</b></td><td><span class="swatch" style="background:#e5484d"></span>red</td>
+      <td><b>D4</b></td><td><span class="swatch" style="background:#f76b15"></span>orange</td>
+      <td><b>E4</b></td><td><span class="swatch" style="background:#e8b931"></span>yellow</td>
+    </tr>
+    <tr>
+      <td><b>F4</b></td><td><span class="swatch" style="background:#2fa84f"></span>green</td>
+      <td><b>G4</b></td><td><span class="swatch" style="background:#3a7dde"></span>blue</td>
+      <td colspan="2" style="color:#5f5775">Colour is never the only signal — the note name is always shown too.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ============ HOW A SESSION WORKS ============ -->
+<section class="page">
+  <h2 class="sect-title">How a session works</h2>
+
+  <h3>The ladder: eight levels, five keys</h3>
+  <p>
+    The version you installed asks for C, D, E, F and G on a child’s very first run — five new
+    motor skills in one sitting. The ladder fixes that. A child owns one key before the second
+    one means anything.
+  </p>
+  <table>
+    <tr><th>#</th><th>Level</th><th>Keys</th><th>Prompts</th><th>What it teaches</th></tr>
+    <tr><td>1</td><td>One key: C</td><td>C</td><td>6</td><td>This key is C. It is the only key lit.</td></tr>
+    <tr><td>2</td><td>Two keys: C and D</td><td>C D</td><td>6</td><td>C then D, in order, three times.</td></tr>
+    <tr><td>3</td><td>Mix it up</td><td>C D</td><td>8</td><td>The same two keys in random order — proves they read the prompt instead of repeating a pattern.</td></tr>
+    <tr><td>4</td><td>Three keys: E joins</td><td>C D E</td><td>8</td><td>Three in order, then five shuffled.</td></tr>
+    <tr><td>5</td><td>Four keys: F joins</td><td>C–F</td><td>9</td><td>Same shape.</td></tr>
+    <tr><td>6</td><td>All five: G joins</td><td>C–G</td><td>11</td><td>Same shape.</td></tr>
+    <tr><td>7</td><td>Song time</td><td>learned</td><td>song</td><td>A real tune, at the child’s own pace.</td></tr>
+    <tr><td>8</td><td>Falling notes</td><td>C–G</td><td>12 tiles</td><td>The game. Ships as 0.7.0.</td></tr>
+  </table>
+  <p>
+    No level can be failed. There are no lives and no timer. A level is capped at 11 prompts,
+    because a beginner hunting for a key takes 8–20 seconds each and anything longer becomes a chore.
+  </p>
+
+  <h3>The shuffle is not random noise</h3>
+  <p>
+    A shuffled run is <b>balanced</b> — each key comes up about the same number of times — and it
+    <b>never asks for the same key three times in a row</b>. Without the second rule a child can pass
+    level 3 by hammering C and never reading the screen at all.
+  </p>
+
+  <h3>Stars</h3>
+  <table>
+    <tr><th>Stars</th><th>Earned by</th></tr>
+    <tr><td>★★★</td><td>Every prompt answered, at most one wrong key</td></tr>
+    <tr><td>★★</td><td>A small number of wrong keys, scaled to how long the level is</td></tr>
+    <tr><td>★</td><td>Getting <b>80%</b> of the way through — a tired child who stops early still banks a star and still unlocks the next stop</td></tr>
+  </table>
+  <p>A level unlocks when the one before it earns at least one star. Unclear audio never costs a star.</p>
+
+  <h3>Every single key press gets an answer</h3>
+  <table>
+    <tr><th>What your child played</th><th>What the screen says</th></tr>
+    <tr><td>The key that was asked for</td><td><code>Yes! Now D4.</code> — or <code>Yes! C4 again.</code> if the next prompt is the same key</td></tr>
+    <tr><td>A different key</td><td><code>That was E4. Press C4.</code> and <b>the key they actually hit rings amber on screen</b></td></tr>
+    <tr><td>Right letter, wrong octave</td><td><code>That was C5. Press C4.</code></td></tr>
+    <tr><td>Two notes, or too quiet</td><td><code>I couldn’t hear that.</code> — never counted as wrong</td></tr>
+    <tr><td>A press too short to identify</td><td><code>I heard something. Hold the key a bit longer.</code></td></tr>
+  </table>
+  <p>
+    The last two rows matter more than they look. Showing the wrong key beside the target is
+    what teaches the distance between C and E. And a quick poke used to produce
+    <i>nothing at all</i> — the previous answer just stayed on screen, which to a child looks like
+    being ignored.
+  </p>
+
+  <h3>Songs at the end of a session</h3>
+  <p>
+    A song is offered as soon as every note in it is a key your child has learned. All six are
+    traditional or original, and every note fits inside C4–G4.
+  </p>
+  <table>
+    <tr><th>Song</th><th>Keys needed</th><th>Notes</th><th>Offered after</th></tr>
+    <tr><td>Step Up (warm-up)</td><td>C D E F</td><td>8</td><td>Level 5</td></tr>
+    <tr><td>Au Clair de la Lune</td><td>C D E</td><td>11</td><td>Level 4</td></tr>
+    <tr><td>Are You Sleeping (first half)</td><td>C D E F G</td><td>14</td><td>Level 6</td></tr>
+    <tr><td>Ode to Joy (first line)</td><td>C D E F G</td><td>15</td><td>Level 6</td></tr>
+    <tr><td>Hot Cross Buns</td><td>C D E</td><td>17</td><td>Level 4</td></tr>
+    <tr><td>Mary Had a Little Lamb</td><td>C D E G</td><td>26</td><td>Level 6</td></tr>
+  </table>
+  <p>
+    Two are deliberately partial: the next phrase of <i>Are You Sleeping</i> and of <i>Ode to Joy</i>
+    both need A, which we never teach. Each stops on a complete musical phrase, so it does not
+    sound cut off. <b>Songs have no rhythm requirement</b> — the strip waits for the child.
+  </p>
+</section>
+
+<!-- ============ SCREEN MAP ============ -->
+<section class="page">
+  <h2 class="sect-title">The eleven screens</h2>
+  <p>Two halves. A child only ever sees the first six; the rest sit behind a simple maths question.</p>
+  <table>
+    <tr><th>#</th><th>Screen</th><th>Who</th><th>Ships</th><th>In one line</th></tr>
+    <tr><td>1</td><td>Home</td><td>Child</td><td>0.6.0</td><td>One big Play button and the star total.</td></tr>
+    <tr><td>2</td><td>Level map</td><td>Child</td><td>0.6.0</td><td>Stops on a path, stars earned, locked ones dimmed.</td></tr>
+    <tr><td>3</td><td>Practice — 0.5.0 form</td><td>Child</td><td>0.5.0</td><td>The keyboard guide, before the ladder exists. Shown for comparison.</td></tr>
+    <tr><td>4</td><td>Practice — the drill</td><td>Child</td><td>0.6.0</td><td>One level of the ladder, with the wrong key ringed amber.</td></tr>
+    <tr><td>5</td><td>Song</td><td>Child</td><td>0.6.0</td><td>Note bubbles with lyric syllables, at the child’s pace.</td></tr>
+    <tr><td>6</td><td>Falling notes</td><td>Child</td><td>0.7.0</td><td>Tiles drift to a line; play each as it lands.</td></tr>
+    <tr><td>7</td><td>Session summary</td><td>Child</td><td>0.6.0</td><td>Stars, what was learned, and the song offer.</td></tr>
+    <tr><td>8</td><td>Grown-ups gate</td><td>Grown-up</td><td>shipped</td><td>A maths question a young child cannot answer.</td></tr>
+    <tr><td>9</td><td>Calibrate</td><td>Grown-up</td><td>0.5.0</td><td>Teach the app your piano’s real tuning, key by key.</td></tr>
+    <tr><td>10</td><td>Audio Lab</td><td>Grown-up</td><td>shipped</td><td>What the microphone is hearing, right now.</td></tr>
+    <tr><td>11</td><td>Files</td><td>Grown-up</td><td>0.5.0</td><td>Export the calibration and the session log.</td></tr>
+  </table>
+
+  <div class="note">
+    <b>How to read the version tags.</b>
+    <span class="tag now">shipped</span> is in the 0.4.0 app you installed.
+    <span class="tag">0.5.0</span> and <span class="tag">0.6.0</span> are designed and planned, waiting for your approval.
+    <span class="tag later">0.7.0</span> is the game, which ships after the real microphone delay has been
+    measured from an exported log rather than estimated.
+  </div>
+
+  <h3>What we are deliberately not building</h3>
+  <p>
+    No cartoon mascot or character. No daily streaks or “come back tomorrow” nagging. No accounts,
+    no cloud, no analytics. No sheet-music notation, no black keys, no chords, no two-hand playing.
+    No tune that needs a key outside C4–G4. The app never plays the songs out loud — the piano is
+    the instrument. And there is no fail state anywhere.
+  </p>
+</section>
+
+<!-- ============ SCREENS ============ -->
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">1</span><h2>Home</h2><span class="tag">0.6.0</span>
+  </div>
+  <div class="who">For the child · the first thing they see</div>
+  <div class="split">
+    <div class="shot">
+      <img src="tool_home.png" alt="Home screen" />
+      <div class="cap">Home</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        One enormous <b>Play</b> button, and almost nothing else. A child who cannot read
+        should be able to start a session by pressing the only big thing on the screen.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Play</b><span>Opens the level map at the stop they reached.</span></div>
+        <div><b>Stars</b><span>Total earned so far, and the name of the next level.</span></div>
+        <div><b>Status</b><span>Green “Piano is ready” once calibration exists; otherwise “Ask a grown-up to set up the piano first” and Play is disabled.</span></div>
+        <div><b>Grown-ups</b><span>Small text link, bottom of the screen, deliberately unglamorous.</span></div>
+      </div>
+      <h4>Why it looks like this</h4>
+      <p>
+        The five coloured dots are the whole curriculum in one glance, and they match the
+        stickers you can put on the real keys. The Grown-ups link is small on purpose: it is
+        not for the child, and nothing behind it should look inviting to them.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">2</span><h2>Level map</h2><span class="tag">0.6.0</span>
+  </div>
+  <div class="who">For the child · chooses what to play</div>
+  <div class="split">
+    <div class="shot">
+      <img src="kids_levelmap.png" alt="Level map" />
+      <div class="cap">Levels 1 and 2 done, 3 in progress, the rest locked</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Shows the whole journey as stops on a path, so progress is visible rather than described.
+        Tapping an unlocked stop starts that level.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Each stop</b><span>Number, name, the coloured dots for the keys it teaches, and up to three stars.</span></div>
+        <div><b>Current</b><span>Outlined in purple — the one to play next.</span></div>
+        <div><b>Locked</b><span>Dimmed with a padlock and not tappable. Unlocks when the stop before it earns one star.</span></div>
+        <div><b>Stops 7, 8</b><span>Gold badges: a music note for Song time, a star for the game.</span></div>
+      </div>
+      <h4>Notes for review</h4>
+      <p>
+        The coloured dots do real work: at a glance you can see level 4 adds yellow (E) and
+        level 6 adds blue (G). A child learns to expect the new colour.
+      </p>
+      <p>
+        The eighth stop reads <b>“Falling notes · soon”</b> because the game arrives in 0.7.0.
+        In the 0.6.0 build the ladder ends at Song time.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">3</span><h2>Practice — the 0.5.0 form</h2><span class="tag">0.5.0</span>
+  </div>
+  <div class="who">For the child · answers “which of the six C keys?” · superseded by screen 4</div>
+  <div class="split">
+    <div class="shot">
+      <img src="mockup_practice_c4_keyboard.png" alt="Practice screen, 0.5.0" />
+      <div class="cap">The keyboard guide, before the ladder exists</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        This is the direct answer to the problem you found: the app said “C” and there are six
+        C keys on the PSR-F52. Now it says <b>C4</b>, and it shows you exactly which one.
+      </p>
+      <h4>The keyboard is two layers</h4>
+      <div class="kv">
+        <div><b>Mini-map</b><span>All 61 keys, C2 to C7, labelled at each C. Shows <i>where on the piano</i> to look.</span></div>
+        <div><b>Zoom strip</b><span>Two octaves around the target, drawn large enough that the key name is readable and the black keys are the right shape.</span></div>
+      </div>
+      <p>
+        A single 61-key strip was the first attempt and it failed: each white key came out about
+        9 dp wide, narrower than the black keys, and no label fit.
+      </p>
+      <h4>Notes for review</h4>
+      <p>
+        This screen still teaches all five keys in one run — the ladder has not arrived yet.
+        It ships first because the export files depend on nothing else, and because it is what
+        makes the next version testable.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">4</span><h2>Practice — the drill</h2><span class="tag">0.6.0</span>
+  </div>
+  <div class="who">For the child · levels 1 to 6 · the screen they spend most time on</div>
+  <div class="split">
+    <div class="shot">
+      <img src="kids_drill.png" alt="Drill screen" />
+      <div class="cap">C4 was asked for; E4 was played, and is ringed amber</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Runs one level of the ladder. The note name fills the top in that key’s colour, and the
+        keyboard below shows both where the key is and what just happened.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Hero</b><span>The note to play, in its own colour — red C4 here.</span></div>
+        <div><b>Badge</b><span>A tick, a retry arrow, or a soft pulse for unclear audio.</span></div>
+        <div><b>Feedback</b><span>One line naming both keys: <i>That was E4. Press C4.</i></span></div>
+        <div><b>Pips</b><span>One dot per prompt. Green done, purple current, grey to come.</span></div>
+        <div><b>Keyboard</b><span>Target filled solid; the five taught keys tinted; the key actually pressed ringed amber.</span></div>
+      </div>
+      <h4>The amber ring</h4>
+      <p>
+        This is the most important addition on the screen. Naming the wrong key in words only
+        helps a child who reads. Lighting it up next to the target is what teaches the
+        <i>distance</i> between C and E.
+      </p>
+      <p>
+        It stays lit after the finger lifts. The app internally forgets a press about a fifth of
+        a second after release, so a ring tied to that would vanish before a child looked up.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">5</span><h2>Song</h2><span class="tag">0.6.0</span>
+  </div>
+  <div class="who">For the child · the reward at the end of a session</div>
+  <div class="split">
+    <div class="shot">
+      <img src="kids_song.png" alt="Song screen" />
+      <div class="cap">Hot Cross Buns, three notes in</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Walks through a real tune, one note at a time. This is the moment the five keys stop
+        being an exercise and become music.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Bubbles</b><span>One per note, in the key’s colour, with the note name inside.</span></div>
+        <div><b>Syllables</b><span>The lyric under each bubble, so it reads as “Hot cross buns” rather than “E D C”.</span></div>
+        <div><b>Current</b><span>Enlarged and outlined; the strip scrolls to keep it centred.</span></div>
+        <div><b>Done</b><span>Small green ticks above the notes already played.</span></div>
+        <div><b>Keyboard</b><span>Same guide as the drill, showing where the current note lives.</span></div>
+      </div>
+      <h4>No rhythm, on purpose</h4>
+      <p>
+        The song waits. There is no metronome and no timing score — the strip advances whenever
+        the correct note arrives, however long that takes. A wrong note does not advance and does
+        not end anything; it gets the same answer it would in a drill.
+      </p>
+      <p>
+        Rhythm is the falling game’s job. Asking a five-year-old to keep time on their first tune
+        would turn the reward back into a test.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">6</span><h2>Falling notes</h2><span class="tag later">0.7.0</span>
+  </div>
+  <div class="who">For the child · level 8 · the game</div>
+  <div class="split">
+    <div class="shot">
+      <img src="kids_falling.png" alt="Falling notes game" />
+      <div class="cap">One tile past the line and fading, one just spawned</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Coloured tiles drift down five lanes — one lane per key, left to right in pitch order —
+        toward a line sitting on top of the keyboard. Your child plays each key as its tile lands.
+      </p>
+      <h4>Timing, and why it is generous</h4>
+      <div class="kv">
+        <div><b>Fall</b><span>3 seconds, so there is time to read the letter and find the key.</span></div>
+        <div><b>Spacing</b><span>2.5 seconds apart. Two tiles share the screen for about half a second.</span></div>
+        <div><b>Window</b><span><b>450 ms early, 900 ms late</b> — deliberately lopsided.</span></div>
+      </div>
+      <p>
+        Everything between the hammer and the app’s answer costs time: the microphone and capture
+        buffer, the first audio block that lands after the note starts, and the three agreeing
+        blocks the detector needs. That is around 200 milliseconds and it is <b>always positive</b> —
+        the app is never early. An even window would hand a child a second of grace before the beat
+        and only half a second after, and beginners are late, not early.
+      </p>
+      <h4>Nothing to lose</h4>
+      <p>
+        A missed tile fades and comes back once, at the end of the run. A wrong key is named and the
+        tile keeps falling. Unclear audio is ignored entirely. There is no health bar, no lives, no
+        miss tally and no “game over” — the counter shows catches only.
+      </p>
+      <p>
+        Stars come from catches, so standing in silence scores nothing rather than a perfect run.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">7</span><h2>Session summary</h2><span class="tag">0.6.0</span>
+  </div>
+  <div class="who">For the child · the end of every level</div>
+  <div class="split">
+    <div class="shot">
+      <img src="kids_summary.png" alt="Session summary" />
+      <div class="cap">Level 4 finished clean — and two songs are now playable</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Closes the session with what was earned, and immediately offers something to do with it.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Stars</b><span>Scale in with a small burst.</span></div>
+        <div><b>One line</b><span>What was learned, in plain words: “C4, D4 and E4 — 11 out of 11 right.”</span></div>
+        <div><b>Songs</b><span>Every tune that the newly learned keys make possible, most prominent first.</span></div>
+        <div><b>Then</b><span>Play the level again, or back to the map.</span></div>
+      </div>
+      <h4>Why the song offer sits here</h4>
+      <p>
+        This is the payoff for the whole level. Finishing three keys is abstract; being told
+        <i>you can now play Hot Cross Buns</i> is not. The song buttons only appear when the keys
+        actually allow it, so the offer is never hollow.
+      </p>
+      <p>
+        If a level was stopped early but at least 80% answered, a star is still banked and this
+        screen still appears. Quitting is never punished with a locked door.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">8</span><h2>Grown-ups gate</h2><span class="tag now">shipped</span>
+  </div>
+  <div class="who">For the grown-up · guards everything behind it</div>
+  <div class="split">
+    <div class="shot">
+      <img src="tool_gate.png" alt="Grown-ups gate" />
+      <div class="cap">The two numbers change every time</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Asks a simple addition question before opening the setup tools. It is not security — it is
+        a speed bump that a four-year-old cannot walk over by mashing buttons.
+      </p>
+      <h4>Why it exists</h4>
+      <p>
+        Behind this gate are Calibrate, Audio Lab and the export files. A child who wandered into
+        Calibrate and pressed Start would overwrite the tuning profile the whole app depends on,
+        and practice would start marking correct playing as wrong.
+      </p>
+      <h4>Notes for review</h4>
+      <div class="kv">
+        <div><b>Numbers</b><span>Re-rolled on every visit, so it cannot be memorised.</span></div>
+        <div><b>Wrong answer</b><span>“That is not the number.” and another try. No lockout, no scolding.</span></div>
+        <div><b>Keyboard</b><span>Numeric only.</span></div>
+      </div>
+      <p>
+        This screen is already in the version you installed and is unchanged by the new work.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">9</span><h2>Calibrate</h2><span class="tag">0.5.0</span>
+  </div>
+  <div class="who">For the grown-up · run once per piano, before a child can practise</div>
+  <div class="split">
+    <div class="shot">
+      <img src="mockup_calibrate_key_dropdown.png" alt="Calibrate screen" />
+      <div class="cap">The Key dropdown you asked for, at the top</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Measures what your piano actually sounds like. Play the named key four times; the app
+        records the pitch it hears, how much it wobbles, and how confident it is. Repeat for
+        five keys and it has a profile.
+      </p>
+      <h4>The Key dropdown</h4>
+      <p>
+        This is the fix for the control you reported as not working — it was missing, not broken.
+        Picking a key jumps straight to it instead of forcing you through C, D, E, F, G in order.
+      </p>
+      <div class="kv">
+        <div><b>Range</b><span>White keys from A2 to F6 — the range the pitch detector can actually hear. Offering keys outside it would let you calibrate against something the app cannot read.</span></div>
+        <div><b>Re-measuring</b><span>Jumping to a key already sampled clears its samples and starts it again, so old and new readings are never mixed.</span></div>
+        <div><b>Mini-map</b><span>Shows the full 61 keys with the unhearable ones faded, so the limit is visible rather than mysterious.</span></div>
+      </div>
+      <h4>Also on this screen</h4>
+      <div class="kv">
+        <div><b>Progress</b><span>“sample 2 of 4” for the current key.</span></div>
+        <div><b>Controls</b><span>Start, Pause, Skip key.</span></div>
+        <div><b>Profile</b><span>Saved quality and note count — “EXCELLENT · 5 notes”.</span></div>
+        <div><b>Export</b><span>Shares the calibration file directly from here.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">10</span><h2>Audio Lab</h2><span class="tag now">shipped</span>
+  </div>
+  <div class="who">For the grown-up · diagnostics when something seems wrong</div>
+  <div class="split">
+    <div class="shot">
+      <img src="tool_lab.png" alt="Audio Lab" />
+      <div class="cap">Live note, signal metrics, and the rolling event log</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Shows you exactly what the microphone is hearing, with no lesson wrapped around it. If a
+        child insists they played the right key, this is the screen that settles it.
+      </p>
+      <h4>What is on it</h4>
+      <div class="kv">
+        <div><b>Live note</b><span>The note name the detector currently reads, its frequency, and how sure it is.</span></div>
+        <div><b>Hint</b><span>Plain-language read on the signal: steady, too quiet, two notes at once.</span></div>
+        <div><b>Metrics</b><span>Microphone in use, sample rate, frames seen, frames dropped, signal level.</span></div>
+        <div><b>Change mic</b><span>Switches between the phone’s audio sources — useful when one is noticeably deafer.</span></div>
+        <div><b>Event log</b><span>The last judgements with status, note, frequency and confidence.</span></div>
+      </div>
+      <h4>What to look for</h4>
+      <p>
+        <b>Frames dropped above zero</b> means the phone is struggling to keep up. <b>AMBIGUOUS</b> rows
+        usually mean the sustain pedal is down or two keys overlap. <b>NO_SIGNAL</b> means the phone
+        is too far from the piano — on a PSR-F52 the speaker is on top, so the phone should sit near it.
+      </p>
+      <p>This screen is already in the version you installed and is unchanged by the new work.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="screen-head">
+    <span class="n">11</span><h2>Files</h2><span class="tag">0.5.0</span>
+  </div>
+  <div class="who">For the grown-up · getting the data off the phone</div>
+  <div class="split">
+    <div class="shot">
+      <img src="mockup_export_files.png" alt="Files export tab" />
+      <div class="cap">A third tab beside Calibrate and Audio Lab</div>
+    </div>
+    <div class="desc">
+      <h4>What it does</h4>
+      <p>
+        Answers your question about where the calibration lives and how to get it out. It is a
+        third tab in Grown-ups, not a new section of the app.
+      </p>
+      <h4>Where the data actually is</h4>
+      <p>
+        The live profile sits in the app’s private preferences at
+        <code>/data/data/com.vijaychhetry.kidspiano/shared_prefs/calibration.xml</code>. That path is
+        unreadable on a normal phone without root, which is exactly why export exists.
+      </p>
+      <h4>The two files</h4>
+      <div class="kv">
+        <div><b>Calibration</b><span><code>calibration-2026-09-19.json</code> — quality, and per key the measured pitch, the median, the spread and the sample count.</span></div>
+        <div><b>Session log</b><span><code>session-2026-09-19.jsonl</code> — one line per scored event: what was asked, what was heard, the confidence, the timestamp.</span></div>
+      </div>
+      <p>
+        Both go out through the normal Android share sheet, so they can go to email, Drive, or
+        anywhere else. <b>Neither contains any audio.</b>
+      </p>
+      <h4>Also here</h4>
+      <p>
+        The <b>Lesson set</b> dropdown picks which five keys practice uses — C4–G4 by default, with a
+        lower C3–G3 set for a piano whose upper register is hard for the phone to hear.
+      </p>
+      <div class="note" style="margin-top:10px">
+        The session log is also what sets the falling game’s timing. Exporting one real run on your
+        PSR-F52 gives the true delay between a hammer strike and the app’s answer, which is the one
+        number no test can produce.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHAT HAPPENS NEXT ============ -->
+<section class="page">
+  <h2 class="sect-title">What happens next</h2>
+
+  <h3>Three releases, in order</h3>
+  <table>
+    <tr><th>Version</th><th>What lands</th><th>Screens</th></tr>
+    <tr>
+      <td><b>0.5.0</b></td>
+      <td>Note names with octaves, the two-layer keyboard guide, the Calibrate key dropdown,
+          and the two export files.</td>
+      <td>3, 9, 11</td>
+    </tr>
+    <tr>
+      <td><b>0.6.0</b></td>
+      <td>The seven-level ladder, the six songs, key colours, stars, and an answer for
+          every key press including ones too short to name.</td>
+      <td>1, 2, 4, 5, 7</td>
+    </tr>
+    <tr>
+      <td><b>0.7.0</b></td>
+      <td>The falling-notes game, with its timing set from a real measurement.</td>
+      <td>6</td>
+    </tr>
+  </table>
+
+  <h3>Why the game is last</h3>
+  <p>
+    It is the only feature whose correctness depends on how long the phone takes to hear a note,
+    and every number in this document for that is arithmetic rather than measurement. 0.6.0
+    writes a session log with a timestamp on every judged press. Ship it, let your child use it
+    next to the real PSR-F52, export the log, and the hit window can be set from your piano and
+    your phone instead of an estimate.
+  </p>
+
+  <h3>How this was checked</h3>
+  <p>
+    The plan behind these screens was reviewed line by line against the existing code. That review
+    found nine serious problems, all fixed before any code was written — among them a test that
+    would have failed on its first run, a scoring rule that gave three stars to a child who played
+    nothing at all, and a hit window that put its generosity on the wrong side of the beat.
+  </p>
+  <p>
+    Implementation is test-first: 48 new automated checks, each one required to fail if the feature
+    it guards is broken. The rules that matter most — unclear audio is never wrong, a held key
+    cannot answer twice, no level can be failed — each have their own test.
+  </p>
+
+  <h3>What I need from you</h3>
+  <p>
+    Look at the eleven screens and tell me what is wrong with them. Specifically worth your
+    attention: is the drill screen (4) readable enough for your child at arm’s length; does the
+    song screen (5) make sense without sheet music; is the level map (2) obvious enough that they
+    can choose for themselves; and is the star rule generous enough that finishing feels good.
+  </p>
+  <p>
+    Nothing is built yet. Once you approve, 0.5.0 and 0.6.0 go in that order, each with the full
+    test suite run and an installable APK, plus a short README on exporting the two files.
+  </p>
+</section>
+
+</body>
+</html>

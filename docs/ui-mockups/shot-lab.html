@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="kids.css" />
+  <link rel="stylesheet" href="tools.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="bar-top">
+      <span class="back">‹ Home</span>
+      <span class="sub" style="font-size:13px">Grown-ups</span>
+    </div>
+    <div class="tabs">
+      <div class="tab">Calibrate</div>
+      <div class="tab on">Audio Lab</div>
+      <div class="tab">Files</div>
+    </div>
+
+    <p class="sub" style="margin-top:10px;font-size:13px">
+      What the microphone is hearing, right now.
+    </p>
+
+    <div style="text-align:center;margin-top:8px">
+      <div style="font-size:66px;font-weight:800;line-height:1;color:#2fa84f">C4</div>
+      <div style="font-size:17px;font-weight:700;margin-top:4px">261.9 Hz · 97% sure</div>
+      <div class="sub" style="margin-top:4px">Steady. This is a clean single note.</div>
+    </div>
+
+    <div class="rows">
+      <div class="row"><span class="k">Microphone</span><span class="v">MIC (built-in)</span></div>
+      <div class="row"><span class="k">Sample rate</span><span class="v">44100 Hz</span></div>
+      <div class="row"><span class="k">Frames seen</span><span class="v">1 284</span></div>
+      <div class="row"><span class="k">Frames dropped</span><span class="v">0</span></div>
+      <div class="row"><span class="k">Signal level</span><span class="v">0.061 RMS</span></div>
+    </div>
+
+    <div class="btnrow">
+      <a class="btn solid">Listening</a>
+      <a class="btn hollow">Stop</a>
+    </div>
+    <p style="text-align:center;margin-top:10px"><span class="back">Change mic</span></p>
+
+    <div style="font-weight:800;font-size:15px;margin-top:12px">Event log</div>
+    <div class="log">
+      <div><span class="ok">CORRECT</span><span>C4</span><span>261.9 Hz</span><span>97%</span></div>
+      <div><span class="no">AMBIGUOUS</span><span>—</span><span>two notes</span><span>41%</span></div>
+      <div><span class="ok">CORRECT</span><span>E4</span><span>329.8 Hz</span><span>94%</span></div>
+      <div><span class="ok">CORRECT</span><span>G4</span><span>392.1 Hz</span><span>96%</span></div>
+      <div><span class="no">NO_SIGNAL</span><span>—</span><span>too quiet</span><span>—</span></div>
+    </div>
+  </div>
+</body>
+</html>
