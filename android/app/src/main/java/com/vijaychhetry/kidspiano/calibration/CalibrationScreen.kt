@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -37,7 +38,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vijaychhetry.kidspiano.core.pitch.levelFraction
 import com.vijaychhetry.kidspiano.ui.KidsColors
 import com.vijaychhetry.kidspiano.ui.KidsTheme
 import com.vijaychhetry.kidspiano.ui.PictureKeyboard
@@ -72,9 +72,10 @@ fun CalibrationScreen(
         ) {
             // Tight top, short keys: the landscape bug was cream padding plus a
             // keyboard that ate the first third of the screen.
-            val shortScreen = maxHeight < 360.dp
-            val overviewH = if (shortScreen) 22.dp else 26.dp
-            val detailH = if (shortScreen) 72.dp else 88.dp
+            val shortScreen = maxHeight < 400.dp
+            val overviewH = if (shortScreen) 20.dp else 26.dp
+            val detailH = if (shortScreen) 64.dp else 88.dp
+            val letterSize = if (shortScreen) 40.sp else 56.sp
 
             Column(
                 Modifier
@@ -83,14 +84,19 @@ fun CalibrationScreen(
                     .padding(top = 4.dp, bottom = 8.dp),
             ) {
                 Row(
-                    Modifier.fillMaxWidth(),
+                    Modifier
+                        .fillMaxWidth()
+                        .height(32.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = {
-                        model.stop()
-                        onHome()
-                    }) {
+                    TextButton(
+                        onClick = {
+                            model.stop()
+                            onHome()
+                        },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    ) {
                         Text(
                             "Home",
                             color = KidsColors.purple,
@@ -116,23 +122,22 @@ fun CalibrationScreen(
                 val profile = state.profile
                 Column(
                     Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
                 ) {
                     if (profile == null) {
                         Text(
                             state.askLetter,
-                            style = MaterialTheme.typography.displayLarge,
                             color = KidsColors.purple,
                             fontWeight = FontWeight.Bold,
+                            fontSize = letterSize,
+                            lineHeight = letterSize,
                         )
-                        Spacer(Modifier.height(2.dp))
                         Text(
                             state.askCaption,
                             color = KidsColors.ink,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                         )
                     } else {
@@ -142,35 +147,19 @@ fun CalibrationScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
                         )
-                        Text(
-                            state.feedback,
-                            color = KidsColors.ink,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
                     }
-                }
-
-                ThinBar(fill = state.progress, color = KidsColors.purple)
-                Spacer(Modifier.height(4.dp))
-                ThinBar(fill = levelFraction(state.level), color = KidsColors.track)
-
-                state.error?.let {
                     Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error,
+                        state.error ?: state.feedback,
+                        color = if (state.error != null) MaterialTheme.colorScheme.error else KidsColors.muted,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }
-                if (profile == null) {
-                    Text(
-                        state.feedback,
-                        color = KidsColors.muted,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp).align(Alignment.CenterHorizontally),
-                    )
-                }
+
+                Spacer(Modifier.weight(1f))
+
+                ThinBar(fill = state.progress, color = KidsColors.purple)
+                Spacer(Modifier.height(10.dp))
 
                 Row(
                     Modifier
@@ -211,7 +200,10 @@ fun CalibrationScreen(
                 }
                 TextButton(
                     onClick = { model.switchSource() },
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .height(28.dp),
+                    contentPadding = PaddingValues(0.dp),
                 ) {
                     Text(
                         "Change mic · ${state.sourceLabel}",
