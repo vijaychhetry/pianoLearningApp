@@ -20,8 +20,20 @@ object Copy {
     const val EXIT_MORE = "One more"
     const val GATE_WRONG = "That is not the number."
     const val SONG_HINT = "Play the big note. No hurry."
+    const val DONE = "Done"
+    const val NEXT = "Next"
+    const val PLAY_AGAIN = "Play again"
+    const val YOU_DID_IT = "You did it"
+    const val ALL_COURSES = "That's all the courses for now."
+    const val PRACTICE = "Practice"
+    const val MIDDLE_C = "C4 · middle C"
 
     fun playThis(midi: Int): String = "Play the ${displayNoteName(midi)} key."
+
+    fun nextHint(nextLabel: String): String = "Next: $nextLabel"
+
+    fun progressCounter(shortLabel: String, completed: Int, total: Int): String =
+        "$shortLabel  $completed/$total"
 
     fun yesNow(nextMidi: Int, sameAsLast: Boolean): String =
         if (sameAsLast) "Yes! ${midiToNoteName(nextMidi)} again."

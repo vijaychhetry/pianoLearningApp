@@ -45,9 +45,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.learning.Copy
 import com.vijaychhetry.kidspiano.core.learning.LessonCue
-import com.vijaychhetry.kidspiano.core.notes.KEY_C4
-import com.vijaychhetry.kidspiano.core.notes.letterOf
-import com.vijaychhetry.kidspiano.core.notes.midiToNoteName
+import com.vijaychhetry.kidspiano.core.learning.PracticeFooter
+import com.vijaychhetry.kidspiano.core.learning.practiceChrome
 import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
@@ -90,14 +89,17 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
         return
     }
 
-    val midi = state.expectedMidi
-    val letter = if (state.complete) "★" else midi?.let { letterOf(it) } ?: state.letter
-    val subtitle = when {
-        state.complete -> "You did it"
-        midi == KEY_C4 -> "C4 · middle C"
-        midi != null -> midiToNoteName(midi)
-        else -> state.noteName
-    }
+    val chrome = practiceChrome(
+        complete = state.complete,
+        running = state.running,
+        shortLabel = state.lessonSetShort,
+        completedCount = state.completedCount,
+        total = state.total,
+        nextLabel = state.nextLabel,
+        expectedMidi = state.expectedMidi,
+        letter = state.letter,
+        noteName = state.noteName,
+    )
 
     BoxWithConstraints(
         Modifier
@@ -126,7 +128,7 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                     modifier = Modifier.height(36.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) { Text("Home") }
-                if (state.complete) {
+                if (chrome.doneIsButton) {
                     TextButton(
                         onClick = {
                             model.stop()
@@ -134,10 +136,10 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                         },
                         modifier = Modifier.height(36.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    ) { Text("Done") }
+                    ) { Text(Copy.DONE) }
                 } else {
                     Text(
-                        "${state.lessonSetShort}  ${state.completedCount}/${state.total}",
+                        chrome.counterText.orEmpty(),
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
@@ -152,7 +154,7 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                letter,
+                chrome.hero.letter,
                 fontSize = heroSp,
                 fontWeight = FontWeight.Black,
                 color = MaterialTheme.colorScheme.primary,
@@ -160,7 +162,7 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                 lineHeight = heroSp,
             )
             Text(
-                subtitle,
+                chrome.hero.subtitle,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -182,19 +184,11 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            if (state.complete && state.nextLabel != null) {
+            chrome.nextHint?.let { hint ->
                 Text(
-                    "Next: ${state.nextLabel}",
+                    hint,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            } else if (state.complete) {
-                Text(
-                    "That's all the courses for now.",
-                    style = MaterialTheme.typography.labelMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp),
@@ -229,34 +223,40 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                 modifier = Modifier.padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (state.complete) {
-                    OutlinedButton(
-                        onClick = { model.playAgain() },
-                        modifier = Modifier.height(40.dp),
-                    ) { Text("Play again") }
-                    if (state.nextLabel != null) {
-                        Button(
-                            onClick = { model.nextCourse { store.saveLessonSetId(it) } },
-                            colors = compactBtn,
-                            modifier = Modifier.height(40.dp),
-                        ) { Text("Next") }
+                when (chrome.footer) {
+                    PracticeFooter.COMPLETE -> {
+                        if (chrome.playAgain) {
+                            OutlinedButton(
+                                onClick = { model.playAgain() },
+                                modifier = Modifier.height(40.dp),
+                            ) { Text(Copy.PLAY_AGAIN) }
+                        }
+                        chrome.nextButtonLabel?.let { label ->
+                            Button(
+                                onClick = { model.nextCourse { store.saveLessonSetId(it) } },
+                                colors = compactBtn,
+                                modifier = Modifier.height(40.dp),
+                            ) { Text(label) }
+                        }
                     }
-                } else if (!state.running) {
-                    Button(
-                        onClick = {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.RECORD_AUDIO,
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
-                        },
-                        modifier = Modifier.height(40.dp),
-                    ) { Text("Start") }
-                } else {
-                    OutlinedButton(
-                        onClick = { model.stop() },
-                        modifier = Modifier.height(40.dp),
-                    ) { Text("Pause") }
+                    PracticeFooter.START -> {
+                        Button(
+                            onClick = {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.RECORD_AUDIO,
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                            },
+                            modifier = Modifier.height(40.dp),
+                        ) { Text("Start") }
+                    }
+                    PracticeFooter.PAUSE -> {
+                        OutlinedButton(
+                            onClick = { model.stop() },
+                            modifier = Modifier.height(40.dp),
+                        ) { Text("Pause") }
+                    }
                 }
             }
         }

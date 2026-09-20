@@ -15,6 +15,7 @@ import com.vijaychhetry.kidspiano.core.learning.LessonSession
 import com.vijaychhetry.kidspiano.core.learning.LessonSnapshot
 import com.vijaychhetry.kidspiano.core.learning.lessonMayStart
 import com.vijaychhetry.kidspiano.core.learning.lessonSessionFor
+import com.vijaychhetry.kidspiano.core.learning.nextCourseLabel
 import com.vijaychhetry.kidspiano.core.notes.DEFAULT_LESSON_SET_ID
 import com.vijaychhetry.kidspiano.core.notes.LessonSet
 import com.vijaychhetry.kidspiano.core.notes.defaultLessonMidi
@@ -320,7 +321,7 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
         line2 = line2,
         lessonSetLabel = currentSet.label,
         lessonSetShort = currentSet.shortLabel,
-        nextLabel = nextLessonSet(currentSet.id)?.label,
+        nextLabel = nextCourseLabel(currentSet.id),
     )
 
     private fun logIfNeeded(snapshot: LessonSnapshot) {

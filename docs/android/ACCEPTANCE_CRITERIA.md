@@ -2,13 +2,15 @@
 
 Canonical product rules: `docs/KIDS_PIANO_MASTER_SPEC.md` §§5–11, §41, §44.
 
-These IDs are **Tier 1 JVM unit tests** (131 of them as of 0.4.0). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
+These IDs are **Tier 1 JVM unit tests** (154 as of 0.5.5). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
+
+**This suite does not approve the Compose screens.** There is no `androidTest`, no Compose UI test, and a GitHub approve click is not a substitute. A green `:core:*:test` means the engine and the screen *decisions* extracted into JVM functions. It does not mean Home, Practice, Calibrate, Files, or Audio Lab were clicked.
 
 Run:
 
 ```bash
 cd android
-./gradlew :core:notes:test :core:pitch:test :core:calibration:test :core:learning:test
+./gradlew :core:notes:test :core:pitch:test :core:calibration:test :core:learning:test :core:diagnostics:test
 ```
 
 ## How we know these tests have teeth
@@ -189,11 +191,19 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-KEY-01 | PSR-F52 is C2–C7; selectable whites are A2–F6 | `PianoKeyboardTest.acKey01_psrF52IsC2ToC7AndSelectableIsA2ToF6` |
 | AC-KEY-02 | Taught keys have fixed colours; middle C is named | `acKey02_fiveTaughtKeysHaveFixedColoursAndMiddleCIsNamed` |
 | AC-KEY-03 | Distance copy counts white-key steps | `acKey03_distanceSentenceCountsWhiteKeys` |
-| AC-KEY-04 | Two lesson sets: C4–G4 and C3–G3 | `acKey04_twoLessonSetsAreC4ClusterAndC3Cluster` |
+| AC-KEY-04 | Three courses: C4–G4, C4–G4 mix, C3–G3 | `acKey04_lessonSetsAreC4ThenMixThenC3` |
 | AC-CAL-JUMP-01 | Jumping to a sampled key clears it | `CalibrationSessionTest.acCalJump01_jumpingToASampledKeyClearsItAndDoesNotMixOldReadings` |
 | AC-CAL-JUMP-02 | Jump after a finished profile is ignored | `CalibrationRunnerTest.acCalJump02_jumpAfterProfileIsIgnored` |
 | AC-CAL-JUMP-03 | Jump while held does not sample the new key | `CalibrationRunnerTest.acCalJump03_jumpingWhileHeldDoesNotSampleTheNewKey` |
 | AC-LEARN-12 | Lower cluster uses the C4–G4 profile and asks for C3 | `LessonPolicyTest.acLearn12_lowerClusterUsesTheSameProfileAndAsksForC3` |
+| AC-LEARN-12b | Mix prompts complete; next course after mix is C3–G3 | `acLearn12b_nextCourseAfterC4G4IsMixThenLower` |
+| AC-LEARN-15 | In progress: counter, not a Done button; Next hidden even if a next course exists | `PracticeChromeTest.acLearn15_*` |
+| AC-LEARN-16 | Complete: Done is an action, Next is offered, hero is the star | `acLearn16_completeMakesDoneAButtonAndOffersTheNextCourse` |
+| AC-LEARN-17 | Last course: Done still an action, no invented Next | `acLearn17_lastCourseStillHasDoneButMustNotInventANextCourse` |
+| AC-LEARN-18 | Course walk is C4 → mix → C3 and then stops | `acLearn18_coursesWalkC4ThenMixThenC3AndThenStop` |
+| AC-HOME-01 | Practice stays off and hides the course until calibrated | `HomeChromeTest.acHome01_practiceStaysOffAndHidesTheCourseUntilCalibrated` |
+| AC-HOME-02 | Ready enables Practice and names the course | `acHome02_readyEnablesPracticeAndNamesTheCourse` |
+| AC-HOME-03 | Ready with no summary still says the piano is ready | `acHome03_readyWithNoSummaryStillSaysThePianoIsReady` |
 | AC-TUNE-06 | 0.4.0 three-field CSV still loads | `CalibrationTuningTest.acTune06_threeFieldCsvFrom04StillLoads` |
 | AC-EXPORT-01 | Calibration JSON names keys and has no audio | `ExportTest.acExport01_calibrationJsonNamesKeysAndHasNoAudio` |
 | AC-EXPORT-02 | Session log round-trips stale presses | `ExportTest.acExport02_sessionLogRoundTripsAndMarksStalePresses` |
@@ -208,6 +218,27 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-PIPE-02 | C4+E4 mix → `AMBIGUOUS`, never `INCORRECT`/`CORRECT` | `acPipe02_twoNoteMixIsAmbiguousNeverIncorrect` |
 | AC-PIPE-03 | Silence vs expected C4 → `NO_SIGNAL`, never `INCORRECT` | `acPipe03_silenceExpectedC4IsNoSignalNeverIncorrect` |
 
+## Screens vs tests (do not rubber-stamp this table)
+
+| Screen | What a JVM test actually covers | What is still untested |
+| --- | --- | --- |
+| Home | Practice gated on a usable profile; course name hidden until then (`HomeChrome`) | Hold-to-open Grown-ups timing, layout |
+| Practice | Lesson judging (`LessonSession`); Done/Next/counter/hero (`PracticeChrome`); course order | Compose widgets, landscape packing, keyboard drawing, ViewModel ticker |
+| Grown-ups gate | Times-table factors 6–9, wrong answers do not lock out | 2-second hold widget |
+| Setup | none (static copy) | layout |
+| Calibrate | `CalibrationRunner` / session / scoring | dropdown, on-screen keyboard, save/skip Compose |
+| Files | lesson-set list; export JSON has no audio | share sheet |
+| Audio Lab | `LabSession` log, meter scale, silence, stall | Compose meter drawing |
+
+The 0.5.5 phone bug (Done was a label, no Next) lived in Compose. `PracticeChrome` exists so that decision cannot silently revert in the JVM layer. A reviewer still has to read `LessonScreen` and confirm it *consumes* `chrome.doneIsButton` / `chrome.nextButtonLabel` rather than drawing `Text("Done")` beside `0/5`.
+
+Mutations run against the new tests (each went red, then the source was restored):
+
+- Show Next whenever a next course exists, even mid-lesson → `acLearn15` fails.
+- `doneIsButton = false` always → `acLearn16` fails.
+- `nextLessonSet` always returns null → `acLearn18` fails.
+- Home Practice always enabled → `acHome01` fails.
+
 ## Tier 2 — not claimed by these tests
 
 Real `AudioRecord` behaviour per device, true sample-rate, PSR-F52 latency, and live onset/release (spec §41) need a physical phone next to a real piano. An emulator can prove the app launches, asks for the right key, and keeps logging frames — it cannot prove recognition accuracy, because its microphone is not a piano. Do **not** add empty `androidTest` methods that always pass.
@@ -217,4 +248,5 @@ Specifically still unproven, and honestly so:
 - Whether `UNPROCESSED` returns digital silence on a given phone, and whether the one-pass source walk lands on a working source there.
 - End-to-end acoustic-to-display latency. The Lab reports **compute** time only, and labels it that way.
 - Recognition accuracy against a miked piano in a room. All pitch evidence is synthesised; `realisticPianoTone` models stretched partials, hammer noise and mains hum, but it is not a recording.
-- The Compose layer, and the glue that remains in the ViewModels: the lock, the ticker lifecycle, and teardown. The per-frame decisions were moved out into `LabSession` and `CalibrationRunner` precisely so they could be tested; what is left around them is not.
+- The Compose layer, and the glue that remains in the ViewModels: the lock, the ticker lifecycle, and teardown. The per-frame decisions were moved out into `LabSession`, `CalibrationRunner`, `PracticeChrome`, and `HomeChrome` precisely so they could be tested; what is left around them is not.
+- A GitHub “approve” click. Green Gradle is not a reviewer.

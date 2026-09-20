@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vijaychhetry.kidspiano.core.learning.Copy
+import com.vijaychhetry.kidspiano.core.learning.homeChrome
 import com.vijaychhetry.kidspiano.ui.HoldButton
 
 @Composable
@@ -26,6 +27,7 @@ fun HomeScreen(
     onPractice: () -> Unit,
     onGrownUps: () -> Unit,
 ) {
+    val chrome = homeChrome(pianoReady, courseLabel, setupSummary)
     Column(
         Modifier
             .fillMaxSize()
@@ -40,22 +42,22 @@ fun HomeScreen(
         )
         Button(
             onClick = onPractice,
-            enabled = pianoReady,
+            enabled = chrome.practiceEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
         ) {
-            Text("Practice", fontSize = 22.sp)
+            Text(Copy.PRACTICE, fontSize = 22.sp)
         }
-        if (pianoReady) {
+        chrome.courseLabel?.let { label ->
             Text(
-                courseLabel,
+                label,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
             )
         }
         Text(
-            if (pianoReady) setupSummary ?: Copy.READY else Copy.NOT_CALIBRATED,
+            chrome.statusLine,
             style = MaterialTheme.typography.bodyMedium,
         )
         HoldButton(
