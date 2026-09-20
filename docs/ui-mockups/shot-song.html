@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="kids.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="bar-top">
+      <span class="back">‹ Map</span>
+      <div class="stars" style="font-size:15px">Song · your own pace</div>
+    </div>
+    <h1 style="margin-top:10px">Hot Cross Buns</h1>
+    <p class="sub">Play the big note. No hurry — the song waits for you.</p>
+    <div class="song-strip" id="strip"></div>
+    <div class="feedback" style="font-size:20px">Yes! Now D4.</div>
+    <div id="kb" style="margin-top:12px"></div>
+    <p class="sub" style="text-align:center;margin-top:12px">3 of 17 notes</p>
+  </div>
+  <script src="kids-keyboard.js"></script>
+  <script>
+    const MIDI = [64, 62, 60, 64, 62, 60, 60, 60];
+    const SYL = ["Hot", "cross", "buns", "Hot", "cross", "buns", "One", "a"];
+    const CURRENT = 3;
+    document.getElementById("strip").innerHTML = MIDI.map((m, i) => {
+      const state = i < CURRENT ? "done" : i === CURRENT ? "now" : "";
+      const tick = i < CURRENT ? '<div class="tick">✓</div>' : "";
+      return `<div class="note ${state}">
+        ${tick}
+        <div class="bub" style="background:${KEY_COLORS[m]}">${noteName(m)}</div>
+        <div class="syl">${SYL[i]}</div>
+      </div>`;
+    }).join("");
+    renderKids(document.getElementById("kb"), MIDI[CURRENT], null);
+  </script>
+</body>
+</html>

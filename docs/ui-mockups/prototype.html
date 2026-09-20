@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kids Piano — 0.5.0 screen prototype</title>
+  <style>
+    :root {
+      --purple: #5b3cc4;
+      --green: #1f8a5b;
+      --cream: #fff6f0;
+      --surface: #fffbfa;
+      --ink: #1e1633;
+      --muted: #6b6280;
+      --line: #e8dcd3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background: #efe6dc;
+      color: var(--ink);
+    }
+    header {
+      padding: 24px 28px 8px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    header h1 { margin: 0 0 6px; font-size: 22px; }
+    header p { margin: 0; color: var(--muted); max-width: 70ch; }
+    .screens {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px 16px 48px;
+    }
+    .phone {
+      width: 360px;
+      height: 740px;
+      background: var(--cream);
+      border: 10px solid #2b2438;
+      border-radius: 36px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 16px 40px rgba(40, 20, 10, 0.18);
+    }
+    .status {
+      height: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 18px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .body { flex: 1; padding: 8px 18px 16px; overflow: hidden; display: flex; flex-direction: column; }
+    .top { display: flex; justify-content: space-between; align-items: center; }
+    .link { color: var(--purple); font-weight: 600; font-size: 15px; }
+    h2 { margin: 8px 0 0; font-size: 22px; }
+    .hero {
+      text-align: center;
+      font-size: 84px;
+      font-weight: 800;
+      color: var(--purple);
+      line-height: 0.9;
+      margin: 12px 0 4px;
+    }
+    .cue {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #d9f0e4; color: var(--green);
+      display: grid; place-items: center; font-size: 26px; margin: 8px auto;
+    }
+    .feedback { text-align: center; font-size: 22px; font-weight: 700; margin: 4px 0; }
+    .meta { text-align: center; color: var(--muted); font-size: 14px; }
+    .bar { height: 10px; background: #eadfd6; border-radius: 6px; margin: 10px 0 14px; }
+    .bar > i { display: block; height: 100%; width: 20%; background: var(--green); border-radius: 6px; }
+    .kb-wrap { border: 1px solid #c8b8aa; border-radius: 12px; background: #1a1524; padding: 8px 8px 10px; }
+    .mini { position: relative; height: 44px; margin-bottom: 8px; }
+    .mini-whites { display: flex; height: 28px; }
+    .mini-white { flex: 1 1 0; background: #fff; border: 1px solid #c9c1b8; box-sizing: border-box; }
+    .mini-white.target { background: var(--purple); }
+    .mini-white.same { box-shadow: inset 0 0 0 1px rgba(91,60,196,0.55); }
+    .mini-white.faded { opacity: 0.35; }
+    .mini-black { position: absolute; top: 0; width: 6px; height: 16px; background: #111; }
+    .mini-labels { display: flex; height: 14px; color: #eee; font-size: 8px; }
+    .mini-labels span { flex: 1 1 0; text-align: center; }
+    .zoom { position: relative; height: 122px; padding-top: 18px; }
+    .zoom-whites { display: flex; height: 100px; }
+    .zoom-white { flex: 1 1 0; background: #fff; border: 1px solid #c9c1b8; position: relative; box-sizing: border-box; }
+    .zoom-white.target { background: var(--purple); }
+    .zoom-white.same { box-shadow: inset 0 0 0 2px rgba(91,60,196,0.4); }
+    .zoom-black { position: absolute; top: 18px; width: 14px; height: 62px; background: #111; border-radius: 0 0 2px 2px; }
+    .callout { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); background: var(--purple); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 5px; border-radius: 6px; }
+    .clabel { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 9px; color: var(--purple); font-weight: 700; }
+    .btn-row { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+    button, .fake-btn {
+      border: 0; border-radius: 10px; padding: 10px 16px;
+      font-weight: 700; font-size: 15px;
+    }
+    .primary { background: var(--purple); color: #fff; }
+    .ghost { background: #fff; color: var(--purple); border: 1px solid var(--purple); }
+    label { font-size: 13px; color: var(--muted); display: block; margin-top: 10px; }
+    select {
+      width: 100%; margin-top: 4px; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: #fff; font-size: 16px;
+    }
+    .tabs { display: flex; gap: 6px; margin: 10px 0 12px; }
+    .tab {
+      flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px;
+      border: 1px solid var(--purple); color: var(--purple); font-size: 12px; font-weight: 700;
+    }
+    .tab.on { background: var(--purple); color: #fff; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    }
+    .card h3 { margin: 0 0 4px; font-size: 16px; }
+    .card p { margin: 0; color: var(--muted); font-size: 13px; }
+    .caption { text-align: center; margin-top: 10px; color: var(--muted); font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Kids Piano 0.5.0 — screen prototype (not the running app)</h1>
+    <p>
+      Practice names the exact key (C4). A 61-key mini-map shows all six Cs; a zoomed
+      two-octave strip makes the target readable. Calibrate’s Key menu lists only keys
+      the phone can hear (A2–F6). Grown-ups gain a Files tab for export.
+    </p>
+  </header>
+  <div class="screens">
+    <div>
+      <div class="phone" id="practice"></div>
+      <div class="caption">Practice — Find this key</div>
+    </div>
+    <div>
+      <div class="phone" id="calibrate"></div>
+      <div class="caption">Grown-ups → Calibrate</div>
+    </div>
+    <div>
+      <div class="phone" id="files"></div>
+      <div class="caption">Grown-ups → Files</div>
+    </div>
+  </div>
+  <script src="keyboard.js"></script>
+  <script>
+    const NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+    const isWhite = (midi) => [0,2,4,5,7,9,11].includes(((midi % 12) + 12) % 12);
+    const nameOf = (midi) => NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+    const audible = (midi) => midi >= 45 && midi <= 89;
+    const options = [];
+    for (let m = 36; m <= 96; m++) {
+      if (!isWhite(m) || !audible(m)) continue;
+      options.push(`<option value="${m}" ${m === 60 ? "selected" : ""}>${nameOf(m)}</option>`);
+    }
+
+    document.getElementById("practice").innerHTML = `
+      <div class="status"><span>9:41</span><span>Kids Piano</span></div>
+      <div class="body">
+        <div class="top"><span class="link">Home</span></div>
+        <div class="meta" style="margin-top:10px">Play this key</div>
+        <div class="hero">C4</div>
+        <div class="cue">✓</div>
+        <div class="feedback">Yes! Now D4.</div>
+        <div class="meta">1 of 5</div>
+        <div class="bar"><i></i></div>
+        <div class="kb-wrap" id="practiceKb"></div>
+        <div class="btn-row"><button class="ghost">Pause</button></div>
+      </div>`;
+
+    document.getElementById("calibrate").innerHTML = `
+      <div class="status"><span>9:41</span><span>Grown-ups</span></div>
+      <div class="body">
+        <div class="top"><h2>Calibrate</h2><span class="link">Kids Home</span></div>
+        <label>Key</label>
+        <select id="keyPick">${options.join("")}</select>
+        <div class="meta" style="margin:12px 0 0">Play this key</div>
+        <div class="hero" style="font-size:56px;margin:4px 0" id="calHero">C4</div>
+        <div class="meta" id="calSample">sample 2 of 4</div>
+        <div class="kb-wrap" id="calKb" style="margin:10px 0"></div>
+        <div class="btn-row">
+          <button class="primary">Start</button>
+          <button class="ghost">Pause</button>
+          <button class="ghost">Skip key</button>
+        </div>
+        <div class="meta" style="margin-top:12px">Saved profile: EXCELLENT · 5 notes</div>
+        <div class="btn-row"><button class="ghost">Export calibration</button></div>
+      </div>`;
+
+    document.getElementById("files").innerHTML = `
+      <div class="status"><span>9:41</span><span>Grown-ups</span></div>
+      <div class="body">
+        <div class="top"><h2>Grown-ups</h2><span class="link">Kids Home</span></div>
+        <div class="tabs">
+          <div class="tab">Calibrate</div>
+          <div class="tab">Audio Lab</div>
+          <div class="tab on">Files</div>
+        </div>
+        <label>Lesson set</label>
+        <select>
+          <option selected>C4–G4 (first)</option>
+          <option>C3–G3 (lower)</option>
+        </select>
+        <div class="card" style="margin-top:16px">
+          <h3>Export calibration</h3>
+          <p>Shares calibration-2026-09-19.json — quality, medians, spread. No recordings.</p>
+        </div>
+        <div class="card">
+          <h3>Export session log</h3>
+          <p>Shares session-2026-09-19.jsonl — one scored event per line.</p>
+        </div>
+        <p class="meta">On the phone the live profile stays in app prefs. Export is how we analyse it here.</p>
+      </div>`;
+
+    renderKeyboard(document.getElementById("practiceKb"), 60);
+    renderKeyboard(document.getElementById("calKb"), 60);
+    document.getElementById("keyPick").addEventListener("change", (e) => {
+      const midi = Number(e.target.value);
+      document.getElementById("calHero").textContent = nameOf(midi);
+      renderKeyboard(document.getElementById("calKb"), midi);
+    });
+  </script>
+</body>
+</html>

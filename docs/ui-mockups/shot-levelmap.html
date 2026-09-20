@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="kids.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="bar-top">
+      <div>
+        <h1>Let's play</h1>
+        <p class="sub">Pick a stop on the path</p>
+      </div>
+      <div class="stars" style="font-size:18px">★ 7</div>
+    </div>
+    <div class="path" id="path"></div>
+  </div>
+  <script src="kids-keyboard.js"></script>
+  <script>
+    const LEVELS = [
+      { n: 1, t: "One key: C", keys: [60], stars: 3 },
+      { n: 2, t: "Two keys: C and D", keys: [60, 62], stars: 3 },
+      { n: 3, t: "Mix it up", keys: [60, 62], stars: 1, now: true },
+      { n: 4, t: "Three keys: E joins", keys: [60, 62, 64], stars: 0, locked: true },
+      { n: 5, t: "Four keys: F joins", keys: [60, 62, 64, 65], stars: 0, locked: true },
+      { n: 6, t: "All five: G joins", keys: [60, 62, 64, 65, 67], stars: 0, locked: true },
+      { n: 7, t: "Song time", keys: [60, 62, 64, 65, 67], stars: 0, locked: true, song: true },
+      { n: 8, t: "Falling notes · soon", keys: [60, 62, 64, 65, 67], stars: 0, locked: true, game: true },
+    ];
+    const stars = (n) =>
+      [0, 1, 2].map((i) => `<span class="${i < n ? "" : "off"}">★</span>`).join("");
+    document.getElementById("path").innerHTML = LEVELS.map((l, i) => {
+      const dots = l.keys
+        .map((k) => `<span class="dot" style="background:${KEY_COLORS[k]}"></span>`)
+        .join("");
+      const cls = ["stop", i % 2 ? "right" : "", l.now ? "now" : "", l.locked ? "locked" : ""]
+        .filter(Boolean)
+        .join(" ");
+      const badge = l.game ? "★" : l.song ? "♪" : l.n;
+      const right = l.locked ? '<span class="lock">🔒</span>' : `<span class="stars">${stars(l.stars)}</span>`;
+      return `<div class="${cls}">
+        <div class="badge" ${l.game || l.song ? 'style="background:#e8b931"' : ""}>${badge}</div>
+        <div class="stop-body">
+          <div class="stop-title">${l.t}</div>
+          <div class="dots">${dots}</div>
+        </div>
+        ${right}
+      </div>`;
+    }).join("");
+  </script>
+</body>
+</html>

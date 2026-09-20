@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="kids.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="bar-top">
+      <span class="back">‹ Map</span>
+      <div class="stars" style="font-size:15px">Level 8 · Falling notes</div>
+    </div>
+    <div class="combo">★ 7 caught</div>
+    <div class="field" id="field"></div>
+    <div id="kb" style="margin-top:10px"></div>
+    <p class="sub" style="text-align:center;margin-top:10px">
+      Play the note when it lands on the line. Late is fine.
+    </p>
+  </div>
+  <script src="kids-keyboard.js"></script>
+  <script>
+    // progress: 0 = just spawned, 1 = on the hit line, >1 = past it and fading.
+    // Two tiles, not three: a 3 s fall and a 2.5 s gap means only two can
+    // share the screen, and only for about half a second.
+    const TILES = [
+      { midi: 60, lane: 0, p: 1.12, fade: 0.45 },
+      { midi: 64, lane: 2, p: 0.22 },
+    ];
+    const field = document.getElementById("field");
+    const LANES = 5;
+    let html = "";
+    for (let i = 1; i < LANES; i++) {
+      html += `<div class="lane" style="left:${(i / LANES) * 100}%"></div>`;
+    }
+    // `top` is a non-configurable window property, so a const of that name
+    // would throw before any of this runs.
+    const startY = 8;
+    const lineY = 330 - 62 - 44;
+    TILES.forEach((t) => {
+      const y = startY + t.p * (lineY - startY);
+      const x = (t.lane + 0.5) * (350 / LANES) - 28;
+      const fade = t.fade ? `;opacity:${t.fade}` : "";
+      html += `<div class="tile" style="background:${KEY_COLORS[t.midi]};top:${y}px;left:${x}px${fade}">
+        ${noteName(t.midi)}
+      </div>`;
+    });
+    html += '<div class="hitline"></div><div class="hitlabel">play now</div>';
+    field.innerHTML = html;
+    renderKids(document.getElementById("kb"), 60, null);
+  </script>
+</body>
+</html>
