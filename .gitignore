@@ -3,3 +3,6 @@ dist
 .DS_Store
 *.local
 coverage
+android/local.properties
+android/**/build
+

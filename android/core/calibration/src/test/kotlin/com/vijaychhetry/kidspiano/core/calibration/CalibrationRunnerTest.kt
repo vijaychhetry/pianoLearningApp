@@ -27,6 +27,8 @@ class CalibrationRunnerTest {
         assertEquals(60, snapshot.targetMidi)
         assertEquals("C", snapshot.letter)
         assertEquals("C4", snapshot.noteName)
+        assertEquals(0, snapshot.notesCompleted)
+        assertEquals(5, snapshot.notesTotal)
         assertTrue(snapshot.feedback.contains("Play the C key"))
         assertEquals(0f, snapshot.progress)
     }

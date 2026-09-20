@@ -31,6 +31,11 @@ class CalibrationSession(
 
     val isComplete: Boolean get() = index >= notes.size
 
+    /** How many of the five keys are finished (asked-and-done, including skips). */
+    val notesCompleted: Int get() = index.coerceAtMost(notes.size)
+
+    val notesTotal: Int get() = notes.size
+
     fun acceptedCount(midi: Int): Int = accepted[midi]?.size ?: 0
 
     fun samplesNeeded(midi: Int): Int = (samplesPerNote - acceptedCount(midi)).coerceAtLeast(0)

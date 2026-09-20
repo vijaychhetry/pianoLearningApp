@@ -11,8 +11,8 @@ android {
         applicationId = "com.vijaychhetry.kidspiano"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0-lab"
+        versionCode = 4
+        versionName = "0.4.0-lab"
     }
     buildTypes {
         release {

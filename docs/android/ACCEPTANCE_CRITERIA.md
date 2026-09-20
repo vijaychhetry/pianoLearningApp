@@ -20,6 +20,10 @@ Two classes of gap turned up this way and are now closed:
 - Tests that construct a subject with **explicit** parameters leave the **default** unpinned, and production uses the defaults. The heartbeat interval, the silence window, the frames needed to call a note stable, the samples needed per note and the engine's minimum sample count all now have a test that constructs the object the way the app does.
 - A branch no test asserts is a branch nothing protects. `GOOD` was previously unreachable by assertion, so collapsing it into `NEEDS_IMPROVEMENT` broke nothing.
 
+| AC-KEY-01 | Overview keyboard is C2–C7 (36 whites); detail keyboard is C3–C6 (22 whites) | `NotesTest.acKey01_overviewAndDetailKeyCounts` |
+| AC-KEY-02 | C4 sits in the middle of the detail keyboard, not against an edge | `acKey02_c4SitsInTheMiddleOfTheDetailKeyboard` |
+| AC-NOTE-03 | C4 is captioned as middle C | `acNote03_c4CaptionNamesMiddleC` |
+
 ## Pitch detection (spec §5, §6, §16)
 
 | ID | Criterion | Test |
