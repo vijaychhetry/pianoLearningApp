@@ -37,6 +37,38 @@ class NotesTest {
     }
 
     @Test
+    fun acNote03_c4CaptionNamesMiddleC() {
+        assertEquals("C4 · middle C", midiToCaption(60))
+        assertEquals("D4", midiToCaption(62))
+        assertEquals("C5", midiToCaption(72))
+    }
+
+    @Test
+    fun acKey01_overviewAndDetailKeyCounts() {
+        val overview = keyboardLayout(OVERVIEW_FROM_MIDI, OVERVIEW_TO_MIDI)
+        val detail = keyboardLayout(DETAIL_FROM_MIDI, DETAIL_TO_MIDI)
+        assertEquals(36, overview.whites.single { it.midi == 36 }.midi)
+        assertEquals("C2", midiToNoteName(OVERVIEW_FROM_MIDI))
+        assertEquals("C7", midiToNoteName(OVERVIEW_TO_MIDI))
+        // C2–C7 inclusive is 5 octaves of 7 whites plus the final C = 36 white keys.
+        assertEquals(36, overview.whiteCount)
+        // C3–C6 inclusive is 3 octaves of 7 whites plus the final C = 22 white keys.
+        assertEquals(22, detail.whiteCount)
+        assertTrue(overview.blacks.all { isBlackKey(it.midi) })
+        assertTrue(detail.whites.none { isBlackKey(it.midi) })
+    }
+
+    @Test
+    fun acKey02_c4SitsInTheMiddleOfTheDetailKeyboard() {
+        val detail = keyboardLayout(DETAIL_FROM_MIDI, DETAIL_TO_MIDI)
+        val c4 = detail.whites.single { it.midi == 60 }
+        // 22 whites, C4 is the 8th (0-based 7): C3 D3 E3 F3 G3 A3 B3 C4.
+        assertEquals(7, c4.index)
+        assertTrue(c4.index > 3, "C4 must not sit against the left edge")
+        assertTrue(c4.index < detail.whiteCount - 4, "C4 must not sit against the right edge")
+    }
+
+    @Test
     fun acNote02b_centsOffSharpA4() {
         val sharp = midiToFreq(69) * Math.pow(2.0, 15.0 / 1200.0)
         assertEquals(15.0, centsOff(sharp, 69), 0.01)

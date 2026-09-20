@@ -5,19 +5,23 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,13 +34,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.vijaychhetry.kidspiano.core.pitch.levelFraction
+import com.vijaychhetry.kidspiano.ui.KidsColors
+import com.vijaychhetry.kidspiano.ui.KidsTheme
+import com.vijaychhetry.kidspiano.ui.PictureKeyboard
 
 @Composable
-fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
+fun CalibrationScreen(
+    model: CalibrationViewModel = viewModel(),
+    onHome: () -> Unit = {},
+) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val store = remember { CalibrationStore(context) }
@@ -45,8 +55,6 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
     ) { granted -> if (granted) model.start() }
 
     LaunchedEffect(Unit) { model.setSavedSummary(store.summary()) }
-    // Only a profile the engine cleared, or one the user explicitly kept,
-    // is allowed to become the stored default (spec §11).
     LaunchedEffect(state.profileToSave) {
         state.profileToSave?.let {
             store.save(it)
@@ -54,142 +62,198 @@ fun CalibrationScreen(model: CalibrationViewModel = viewModel()) {
         }
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(
-            "Calibrate teaches the app how your piano sounds. " +
-                "It asks for five keys, one at a time, and saves a profile for this room and phone.",
-            style = MaterialTheme.typography.bodySmall,
-        )
+    KidsTheme {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxSize()
+                .background(KidsColors.cream)
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+        ) {
+            // Tight top, short keys: the landscape bug was cream padding plus a
+            // keyboard that ate the first third of the screen.
+            val shortScreen = maxHeight < 400.dp
+            val overviewH = if (shortScreen) 20.dp else 26.dp
+            val detailH = if (shortScreen) 64.dp else 88.dp
+            val letterSize = if (shortScreen) 40.sp else 56.sp
 
-        val profile = state.profile
-        if (profile == null) {
-            Text("Play this key", style = MaterialTheme.typography.titleMedium)
-            Text(
-                state.askLetter,
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                "${state.askNoteName} · sample ${state.samplesDone} of ${state.samplesNeeded}",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        } else {
-            Text("Calibration result", style = MaterialTheme.typography.titleMedium)
-            Text(
-                profile.calibrationQuality.name.replace('_', ' '),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(12.dp)) {
-                    profile.notes.forEach { note ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("MIDI ${note.midiNote}", style = MaterialTheme.typography.bodySmall)
-                            Text(
-                                "median %.1f Hz · spread %.1f Hz · %d samples".format(
-                                    note.observedMedianFrequency,
-                                    note.frequencySpread,
-                                    note.sampleCount,
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 4.dp, bottom = 8.dp),
+            ) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(32.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = {
+                            model.stop()
+                            onHome()
+                        },
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                    ) {
+                        Text(
+                            "Home",
+                            color = KidsColors.purple,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp,
+                        )
+                    }
+                    Text(
+                        "${state.notesCompleted}/${state.notesTotal}",
+                        color = KidsColors.ink,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                    )
+                }
+
+                PictureKeyboard(
+                    targetMidi = state.targetMidi,
+                    overviewHeight = overviewH,
+                    detailHeight = detailH,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                val profile = state.profile
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    if (profile == null) {
+                        Text(
+                            state.askLetter,
+                            color = KidsColors.purple,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = letterSize,
+                            lineHeight = letterSize,
+                        )
+                        Text(
+                            state.askCaption,
+                            color = KidsColors.ink,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    } else {
+                        Text(
+                            profile.calibrationQuality.name.replace('_', ' '),
+                            color = KidsColors.purple,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp,
+                        )
+                    }
+                    Text(
+                        state.error ?: state.feedback,
+                        color = if (state.error != null) MaterialTheme.colorScheme.error else KidsColors.muted,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+
+                Spacer(Modifier.weight(1f))
+
+                ThinBar(fill = state.progress, color = KidsColors.purple)
+                Spacer(Modifier.height(10.dp))
+
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (profile == null) {
+                        PillButton(
+                            label = if (state.running) "Pause" else "Start",
+                            filled = !state.running,
+                            onClick = {
+                                if (state.running) {
+                                    model.stop()
+                                } else {
+                                    val granted = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO,
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            },
+                        )
+                        TextButton(onClick = { model.skip() }, enabled = state.running) {
+                            Text("Skip key", color = KidsColors.muted, fontSize = 13.sp)
+                        }
+                    } else {
+                        PillButton(label = "Redo", filled = false, onClick = { model.restart() })
+                        if (state.needsConfirmation) {
+                            PillButton(
+                                label = "Use anyway",
+                                filled = true,
+                                onClick = { model.acceptProfileAnyway() },
                             )
                         }
                     }
                 }
+                TextButton(
+                    onClick = { model.switchSource() },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .height(28.dp),
+                    contentPadding = PaddingValues(0.dp),
+                ) {
+                    Text(
+                        "Change mic · ${state.sourceLabel}",
+                        color = KidsColors.muted,
+                        fontSize = 11.sp,
+                    )
+                }
             }
         }
-
-        ProgressBar(state.progress)
-        LevelBar(state.level)
-
-        state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-        }
-        Text(state.feedback, style = MaterialTheme.typography.bodyLarge)
-        state.savedSummary?.let {
-            Text(it, style = MaterialTheme.typography.labelMedium)
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Mic source", style = MaterialTheme.typography.bodySmall)
-            Text(state.sourceLabel, style = MaterialTheme.typography.bodySmall)
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(
-                onClick = {
-                    val granted = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.RECORD_AUDIO,
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (granted) model.start() else launcher.launch(Manifest.permission.RECORD_AUDIO)
-                },
-                enabled = !state.running && state.profile == null,
-            ) { Text(if (state.running) "Listening" else "Start") }
-            OutlinedButton(onClick = { model.stop() }, enabled = state.running) { Text("Pause") }
-            if (state.profile == null) {
-                TextButton(onClick = { model.skip() }, enabled = state.running) { Text("Skip key") }
-            } else {
-                TextButton(onClick = { model.restart() }) { Text("Redo") }
-            }
-        }
-        if (state.needsConfirmation) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedButton(onClick = { model.acceptProfileAnyway() }) { Text("Use anyway") }
-                Text(
-                    "Redo is better: a weak profile makes the app guess.",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        }
-        // Also offered while stopped: a pinned source that fails to start
-        // would otherwise leave no way out of the loop.
-        TextButton(onClick = { model.switchSource() }) { Text("Change mic") }
     }
 }
 
 @Composable
-private fun ProgressBar(progress: Float) {
+private fun ThinBar(fill: Float, color: androidx.compose.ui.graphics.Color) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(10.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .height(6.dp)
+            .clip(RoundedCornerShape(99.dp))
+            .background(KidsColors.track),
     ) {
         Box(
             Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .height(10.dp)
-                .background(MaterialTheme.colorScheme.primary),
+                .fillMaxWidth(fill.coerceIn(0f, 1f))
+                .height(6.dp)
+                .background(color),
         )
     }
 }
 
 @Composable
-private fun LevelBar(level: Double) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(10.dp)
-            .clip(RoundedCornerShape(5.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+private fun PillButton(label: String, filled: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(999.dp)
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier
+            .widthIn(min = 96.dp)
+            .then(
+                if (filled) {
+                    Modifier.background(KidsColors.purple, shape)
+                } else {
+                    Modifier.border(1.dp, KidsColors.purple, shape)
+                },
+            )
+            .padding(horizontal = 8.dp),
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth(levelFraction(level))
-                .height(10.dp)
-                .background(MaterialTheme.colorScheme.tertiary),
+        Text(
+            label,
+            color = if (filled) androidx.compose.ui.graphics.Color.White else KidsColors.purple,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }

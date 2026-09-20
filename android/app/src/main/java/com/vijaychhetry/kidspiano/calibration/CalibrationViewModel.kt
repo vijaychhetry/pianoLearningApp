@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.vijaychhetry.kidspiano.core.audio.AudioRecordInput
 import com.vijaychhetry.kidspiano.core.calibration.CalibrationProfile
 import com.vijaychhetry.kidspiano.core.calibration.CalibrationRunner
+import com.vijaychhetry.kidspiano.core.notes.midiToCaption
 import com.vijaychhetry.kidspiano.core.pitch.MicSourceCycler
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -24,10 +25,14 @@ import kotlinx.coroutines.withContext
 data class CalibrationUiState(
     val running: Boolean = false,
     val error: String? = null,
+    val targetMidi: Int? = 60,
     val askLetter: String = "C",
     val askNoteName: String = "C4",
+    val askCaption: String = "C4 · middle C",
     val samplesDone: Int = 0,
     val samplesNeeded: Int = 0,
+    val notesCompleted: Int = 0,
+    val notesTotal: Int = 5,
     val progress: Float = 0f,
     val feedback: String = "Tap Start, then play the C key.",
     val level: Double = 0.0,
@@ -237,10 +242,14 @@ class CalibrationViewModel : ViewModel() {
         val profile = snapshot.profile
         _state.update {
             it.copy(
+                targetMidi = snapshot.targetMidi,
                 askLetter = snapshot.letter,
                 askNoteName = snapshot.noteName,
+                askCaption = snapshot.targetMidi?.let(::midiToCaption) ?: "Done",
                 samplesDone = snapshot.samplesDone,
                 samplesNeeded = snapshot.samplesNeeded,
+                notesCompleted = snapshot.notesCompleted,
+                notesTotal = snapshot.notesTotal,
                 progress = snapshot.progress,
                 feedback = profile?.let(::resultFeedback) ?: snapshot.feedback,
                 level = snapshot.level,

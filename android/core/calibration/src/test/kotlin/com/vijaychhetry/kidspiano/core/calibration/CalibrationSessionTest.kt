@@ -19,6 +19,8 @@ class CalibrationSessionTest {
         assertEquals(listOf(60, 62, 64, 65, 67), session.notes)
         assertFalse(session.isComplete)
         assertEquals(0f, session.progress)
+        assertEquals(0, session.notesCompleted)
+        assertEquals(5, session.notesTotal)
     }
 
     @Test
