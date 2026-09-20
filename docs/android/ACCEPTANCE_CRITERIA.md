@@ -2,7 +2,7 @@
 
 Canonical product rules: `docs/KIDS_PIANO_MASTER_SPEC.md` §§5–11, §41, §44.
 
-These IDs are **Tier 1 JVM unit tests** (154 as of 0.5.5). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
+These IDs are **Tier 1 JVM unit tests** (157 as of 0.5.6). Each test asserts numbers or exact statuses that would fail if the implementation rubber-ducked (`assertTrue(true)`, “any MIDI”, quality-enum-only).
 
 **This suite does not approve the Compose screens.** There is no `androidTest`, no Compose UI test, and a GitHub approve click is not a substitute. A green `:core:*:test` means the engine and the screen *decisions* extracted into JVM functions. It does not mean Home, Practice, Calibrate, Files, or Audio Lab were clicked.
 
@@ -204,6 +204,9 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 | AC-HOME-01 | Practice stays off and hides the course until calibrated | `HomeChromeTest.acHome01_practiceStaysOffAndHidesTheCourseUntilCalibrated` |
 | AC-HOME-02 | Ready enables Practice and names the course | `acHome02_readyEnablesPracticeAndNamesTheCourse` |
 | AC-HOME-03 | Ready with no summary still says the piano is ready | `acHome03_readyWithNoSummaryStillSaysThePianoIsReady` |
+| AC-COURSE-01 | Production unlock flag is off; every course title is in the menu and enabled | `CourseAccessTest.acCourse01_productionFlagKeepsSequentialUnlockOff` |
+| AC-COURSE-02 | When the flag is on, later courses stay locked until the previous one is finished | `acCourse02_sequentialUnlockLocksLaterCoursesUntilThePreviousIsDone` |
+| AC-COURSE-03 | Flag-off ignores missing completions so review can open any course | `acCourse03_flagOffIgnoresMissingCompletionsSoReviewCanOpenAnyCourse` |
 | AC-TUNE-06 | 0.4.0 three-field CSV still loads | `CalibrationTuningTest.acTune06_threeFieldCsvFrom04StillLoads` |
 | AC-EXPORT-01 | Calibration JSON names keys and has no audio | `ExportTest.acExport01_calibrationJsonNamesKeysAndHasNoAudio` |
 | AC-EXPORT-02 | Session log round-trips stale presses | `ExportTest.acExport02_sessionLogRoundTripsAndMarksStalePresses` |
@@ -222,7 +225,7 @@ The saved profile is not a badge. The five medians become a concert-A4 offset th
 
 | Screen | What a JVM test actually covers | What is still untested |
 | --- | --- | --- |
-| Home | Practice gated on a usable profile; course name hidden until then (`HomeChrome`) | Hold-to-open Grown-ups timing, layout |
+| Home | Practice gated on a usable profile; course name hidden until then (`HomeChrome`); course menu titles and unlock flag (`CourseAccess`) | Hold-to-open Grown-ups timing, drawer animation |
 | Practice | Lesson judging (`LessonSession`); Done/Next/counter/hero (`PracticeChrome`); course order | Compose widgets, landscape packing, keyboard drawing, ViewModel ticker |
 | Grown-ups gate | Times-table factors 6–9, wrong answers do not lock out | 2-second hold widget |
 | Setup | none (static copy) | layout |

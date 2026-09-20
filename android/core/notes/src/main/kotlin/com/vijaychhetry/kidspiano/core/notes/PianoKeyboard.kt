@@ -37,6 +37,7 @@ data class LessonSet(
     val notes: List<Int>,
     val shuffle: Boolean = false,
     val completionCopy: String,
+    val subtitle: String,
 )
 
 fun defaultLessonMidi(): List<Int> = FIVE_KEYS
@@ -50,6 +51,7 @@ fun lessonSets(): List<LessonSet> = listOf(
         shortLabel = "C4–G4",
         notes = defaultLessonMidi(),
         completionCopy = "You found all five keys!",
+        subtitle = "C D E F G in order, middle of the piano",
     ),
     LessonSet(
         id = "c4g4-mix",
@@ -58,6 +60,7 @@ fun lessonSets(): List<LessonSet> = listOf(
         notes = defaultLessonMidi(),
         shuffle = true,
         completionCopy = "You mixed up C D E F G!",
+        subtitle = "Same five keys, mixed up",
     ),
     LessonSet(
         id = "c3g3",
@@ -65,6 +68,7 @@ fun lessonSets(): List<LessonSet> = listOf(
         shortLabel = "C3–G3",
         notes = lowerClusterLessonMidi(),
         completionCopy = "You found the lower five keys!",
+        subtitle = "C D E F G one octave lower",
     ),
 )
 

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.vijaychhetry.kidspiano.BuildConfig
+import com.vijaychhetry.kidspiano.calibration.CalibrationStore
 import com.vijaychhetry.kidspiano.core.audio.AudioRecordInput
 import com.vijaychhetry.kidspiano.core.calibration.CalibrationProfile
 import com.vijaychhetry.kidspiano.core.common.Config
@@ -67,6 +68,7 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     private val input = AudioRecordInput()
     private val sources = MicSourceCycler(AudioRecordInput.SOURCE_ORDER)
     private val logStore = SessionLogStore(app)
+    private val progressStore = CalibrationStore(app)
     private val control = Mutex()
     private var session: LessonSession? = null
     private var profile: CalibrationProfile? = null
@@ -82,10 +84,14 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow(LessonUiState())
     val state: StateFlow<LessonUiState> = _state
 
-    fun useProfile(profile: CalibrationProfile?, setId: String = DEFAULT_LESSON_SET_ID) {
+    fun useProfile(
+        profile: CalibrationProfile?,
+        setId: String = DEFAULT_LESSON_SET_ID,
+        force: Boolean = false,
+    ) {
         this.profile = profile
         val set = lessonSetById(setId)
-        if (session != null && currentSet.id == set.id && _state.value.ready && !set.shuffle) return
+        if (!force && session != null && currentSet.id == set.id && _state.value.ready && !set.shuffle) return
         currentSet = set
         notes = promptsFor(set, System.currentTimeMillis())
         if (!lessonMayStart(profile) || profile == null) {
@@ -294,6 +300,7 @@ class LessonViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun publish(snapshot: LessonSnapshot, running: Boolean) {
+        if (snapshot.complete) progressStore.markCourseCompleted(currentSet.id)
         _state.value = snapshot.toUi(ready = true, running = running, error = _state.value.error)
     }
 

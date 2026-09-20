@@ -50,7 +50,7 @@ import com.vijaychhetry.kidspiano.core.learning.practiceChrome
 import com.vijaychhetry.kidspiano.ui.PianoKeyboardView
 
 @Composable
-fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
+fun LessonScreen(model: LessonViewModel, onHome: () -> Unit, onOpenMenu: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val store = remember { CalibrationStore(context) }
@@ -76,10 +76,13 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TextButton(onClick = {
-                model.stop()
-                onHome()
-            }) { Text("Home") }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onOpenMenu) { Text(Copy.COURSES) }
+                TextButton(onClick = {
+                    model.stop()
+                    onHome()
+                }) { Text("Home") }
+            }
             Text(
                 Copy.NOT_CALIBRATED,
                 style = MaterialTheme.typography.titleLarge,
@@ -120,14 +123,21 @@ fun LessonScreen(model: LessonViewModel, onHome: () -> Unit) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(
-                    onClick = {
-                        model.stop()
-                        onHome()
-                    },
-                    modifier = Modifier.height(36.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                ) { Text("Home") }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(
+                        onClick = onOpenMenu,
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    ) { Text(Copy.COURSES) }
+                    TextButton(
+                        onClick = {
+                            model.stop()
+                            onHome()
+                        },
+                        modifier = Modifier.height(36.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    ) { Text("Home") }
+                }
                 if (chrome.doneIsButton) {
                     TextButton(
                         onClick = {

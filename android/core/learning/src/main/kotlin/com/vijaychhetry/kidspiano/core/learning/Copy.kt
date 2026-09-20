@@ -26,6 +26,7 @@ object Copy {
     const val YOU_DID_IT = "You did it"
     const val ALL_COURSES = "That's all the courses for now."
     const val PRACTICE = "Practice"
+    const val COURSES = "Courses"
     const val MIDDLE_C = "C4 · middle C"
 
     fun playThis(midi: Int): String = "Play the ${displayNoteName(midi)} key."

@@ -1,6 +1,7 @@
 package com.vijaychhetry.kidspiano.home
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,9 +28,17 @@ fun HomeScreen(
     courseLabel: String,
     onPractice: () -> Unit,
     onGrownUps: () -> Unit,
+    onOpenMenu: () -> Unit,
 ) {
     val chrome = homeChrome(pianoReady, courseLabel, setupSummary)
-    Column(
+    Box(Modifier.fillMaxSize()) {
+        TextButton(
+            onClick = onOpenMenu,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 8.dp, top = 4.dp),
+        ) { Text(Copy.COURSES) }
+        Column(
         Modifier
             .fillMaxSize()
             .padding(24.dp),
@@ -66,5 +76,6 @@ fun HomeScreen(
             textButton = true,
             onHeld = onGrownUps,
         )
+        }
     }
 }

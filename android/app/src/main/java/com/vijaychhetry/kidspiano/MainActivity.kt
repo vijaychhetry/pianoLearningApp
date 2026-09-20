@@ -47,7 +47,15 @@ import com.vijaychhetry.kidspiano.lab.AudioLabScreen
 import com.vijaychhetry.kidspiano.lab.AudioLabViewModel
 import com.vijaychhetry.kidspiano.lesson.LessonScreen
 import com.vijaychhetry.kidspiano.lesson.LessonViewModel
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import com.vijaychhetry.kidspiano.core.learning.courseMenu
+import com.vijaychhetry.kidspiano.ui.CourseDrawerSheet
 import com.vijaychhetry.kidspiano.ui.LockScreenOrientation
+import kotlinx.coroutines.launch
 
 private enum class Dest { HOME, PRACTICE, GATE, GROWNUPS }
 private enum class GrownUpsTab { SETUP, CALIBRATE, FILES, LAB }
@@ -85,25 +93,67 @@ private fun KidsPianoApp() {
     val pianoReady = lessonMayStart(profile)
     val playSession = dest == Dest.PRACTICE
     LockScreenOrientation(landscape = playSession)
+    val drawerState = rememberDrawerState(DrawerValue.Open)
+    val scope = rememberCoroutineScope()
+    val courseItems = courseMenu(
+        currentId = store.lessonSetId(),
+        completedIds = store.completedCourseIds(),
+    )
+    val hideDrawer = {
+        scope.launch { drawerState.close() }
+        Unit
+    }
+    val showDrawer = {
+        scope.launch { drawerState.open() }
+        Unit
+    }
+    LaunchedEffect(dest) {
+        if (dest == Dest.HOME) drawerState.open() else drawerState.close()
+    }
 
-    BackHandler(enabled = dest != Dest.HOME) {
-        when (dest) {
-            Dest.PRACTICE -> {
-                lessonModel.stop()
-                homeTick++
-                dest = Dest.HOME
+    val openCourse: (String) -> Unit = { id ->
+        store.saveLessonSetId(id)
+        lessonModel.stop()
+        lessonModel.useProfile(store.load(), id, force = true)
+        dest = Dest.PRACTICE
+        homeTick++
+        scope.launch { drawerState.close() }
+    }
+
+    BackHandler(enabled = drawerState.isOpen || dest != Dest.HOME) {
+        if (drawerState.isOpen) {
+            hideDrawer()
+        } else {
+            when (dest) {
+                Dest.PRACTICE -> {
+                    lessonModel.stop()
+                    homeTick++
+                    dest = Dest.HOME
+                }
+                Dest.GATE -> dest = Dest.HOME
+                Dest.GROWNUPS -> {
+                    labModel.stop()
+                    calibrationModel.stop()
+                    homeTick++
+                    dest = Dest.HOME
+                }
+                Dest.HOME -> Unit
             }
-            Dest.GATE -> dest = Dest.HOME
-            Dest.GROWNUPS -> {
-                labModel.stop()
-                calibrationModel.stop()
-                homeTick++
-                dest = Dest.HOME
-            }
-            Dest.HOME -> Unit
         }
     }
 
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = dest == Dest.HOME || dest == Dest.PRACTICE,
+        drawerContent = {
+            CourseDrawerSheet(
+                items = courseItems,
+                onOpen = { item ->
+                    if (item.enabled) openCourse(item.id)
+                },
+            )
+        },
+    ) {
     Scaffold(contentWindowInsets = WindowInsets.safeDrawing) { padding ->
         Column(
             Modifier
@@ -117,12 +167,17 @@ private fun KidsPianoApp() {
                     courseLabel = store.lessonSet().label,
                     onPractice = { dest = Dest.PRACTICE },
                     onGrownUps = { dest = Dest.GATE },
+                    onOpenMenu = showDrawer,
                 )
-                Dest.PRACTICE -> LessonScreen(lessonModel) {
-                    lessonModel.stop()
-                    homeTick++
-                    dest = Dest.HOME
-                }
+                Dest.PRACTICE -> LessonScreen(
+                    model = lessonModel,
+                    onHome = {
+                        lessonModel.stop()
+                        homeTick++
+                        dest = Dest.HOME
+                    },
+                    onOpenMenu = showDrawer,
+                )
                 Dest.GATE -> GrownUpsGateScreen(
                     onUnlocked = { dest = Dest.GROWNUPS },
                     onBack = { dest = Dest.HOME },
@@ -147,6 +202,7 @@ private fun KidsPianoApp() {
                 )
             }
         }
+    }
     }
 }
 

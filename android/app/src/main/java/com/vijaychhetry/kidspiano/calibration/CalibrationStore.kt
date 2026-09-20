@@ -78,6 +78,19 @@ class CalibrationStore(context: Context) {
             .apply()
     }
 
+    fun markCourseCompleted(id: String) {
+        val next = completedCourseIds() + id
+        prefs.edit().putString(KEY_DONE, next.joinToString(",")).apply()
+    }
+
+    fun completedCourseIds(): Set<String> =
+        prefs.getString(KEY_DONE, "")
+            .orEmpty()
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+
     fun clear() = prefs.edit().clear().apply()
 
     private companion object {
@@ -88,5 +101,6 @@ class CalibrationStore(context: Context) {
         const val KEY_SAVED_AT = "savedAt"
         const val KEY_LESSON = "lessonMidi"
         const val KEY_SET = "lessonSet"
+        const val KEY_DONE = "completedCourses"
     }
 }
